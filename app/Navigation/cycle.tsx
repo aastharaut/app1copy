@@ -1,6 +1,6 @@
 import React from "react";
 import { View } from "react-native";
-import AppCurrentCycle from "../tabs/AppCurrentCycle"; // Adjust path if needed
+import AppCurrentCycle from "../tabs/AppCurrentCycle"; // Path is correct
 
 const CycleScreen = () => {
   return (

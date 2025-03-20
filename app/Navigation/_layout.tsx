@@ -9,18 +9,18 @@ const _layout = () => {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#8A2BE2", // Purple when active
+        tabBarActiveTintColor: "#4B0082", // Purple when active
         tabBarInactiveTintColor: "#999", // Grey when inactive
         tabBarStyle: {
           backgroundColor: "#FFFFFF", // White tab bar
           borderTopWidth: 1,
           borderTopColor: "#ddd",
-          height: 60,
+          height: 80,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "bold",
-          paddingBottom: 5,
+          paddingBottom: 10,
         },
       }}
     >

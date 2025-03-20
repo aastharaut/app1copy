@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Image, ToastAndroid } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { RouteProp, NavigationProp } from '@react-navigation/native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
-// Type definitions for navigation and route params
-interface SymptomTrackerScreenProps {
-  navigation: NavigationProp<any>;
-  route: RouteProp<any, any>;
-}
-
+// Type definitions
 type WeekDay = {
   day: number;
   dayName: string;
@@ -22,9 +17,12 @@ type SymptomCategory = {
   options: any[]; // Image sources
 };
 
-const SymptomTrackerScreen: React.FC<SymptomTrackerScreenProps> = ({ navigation, route }) => {
-  // Get date from route params or use current date
-  const selectedDate = route.params?.date || new Date();
+const SymptomTrackerScreen = () => {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Get date from params or use current date
+  const selectedDate = params.date ? new Date(String(params.date)) : new Date();
   const dayOfWeek = selectedDate.getDay();
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -165,15 +163,15 @@ const SymptomTrackerScreen: React.FC<SymptomTrackerScreenProps> = ({ navigation,
     // Show confirmation toast
     ToastAndroid.show('Symptoms saved successfully!', ToastAndroid.SHORT);
 
-    // Navigate back or show confirmation
-    navigation.goBack();
+    // Navigate back
+    router.back();
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
+          onPress={() => router.back()} 
           style={styles.backButton} 
           accessible={true} 
           accessibilityLabel="Close screen"
