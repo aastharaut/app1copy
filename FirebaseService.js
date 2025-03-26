@@ -129,7 +129,7 @@ import {
       console.error('Error updating cycle:', error);
       throw error;
     }
-  };
+  };s
   
   // Get user's cycles
   export const getUserCycles = async (userId) => {
