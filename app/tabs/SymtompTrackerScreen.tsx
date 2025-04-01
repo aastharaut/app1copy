@@ -55,9 +55,10 @@ const SymptomTrackerScreen = () => {
 
   // Update weekDays whenever the selectedDate changes
   useEffect(() => {
+    // Only update weekDays when selectedDate changes
     setWeekDays(generateWeekDays());
-  }, [selectedDate]);
-
+  }, [selectedDate]);  // This ensures the weekDays update only when the selectedDate changes
+  
   // Symptom categories with their icons
   const symptomCategories: SymptomCategory[] = [
     {
@@ -144,12 +145,26 @@ const SymptomTrackerScreen = () => {
   };
 
   // Handle symptom selection
+  
   const handleSymptomSelect = (categoryIndex: number, optionIndex: number): void => {
     const updatedSymptoms = [...symptoms];
-    updatedSymptoms[categoryIndex].selected = 
-      updatedSymptoms[categoryIndex].selected === optionIndex ? null : optionIndex;
-    setSymptoms(updatedSymptoms);
+    const currentSelection = updatedSymptoms[categoryIndex].selected;
+    
+    if (currentSelection !== optionIndex) {
+      updatedSymptoms[categoryIndex].selected = optionIndex;
+      setSymptoms(updatedSymptoms);
+    } else {
+      updatedSymptoms[categoryIndex].selected = null;
+      setSymptoms(updatedSymptoms);
+    }
   };
+  
+  // const handleSymptomSelect = (categoryIndex: number, optionIndex: number): void => {
+  //   const updatedSymptoms = [...symptoms];
+  //   updatedSymptoms[categoryIndex].selected = 
+  //     updatedSymptoms[categoryIndex].selected === optionIndex ? null : optionIndex;
+  //   setSymptoms(updatedSymptoms);
+  // };
 
   // Save symptoms
   const handleSave = (): void => {
@@ -160,9 +175,6 @@ const SymptomTrackerScreen = () => {
       selected: s.selected 
     })));
     
-    // Show confirmation toast
-    ToastAndroid.show('Symptoms saved successfully!', ToastAndroid.SHORT);
-
     // Navigate back
     router.back();
   };

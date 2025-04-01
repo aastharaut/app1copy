@@ -328,6 +328,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../../FirebaseConfig";
+//import { registerUser } from "@/api/users";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -356,13 +357,14 @@ export default function SignUpScreen() {
         BMI: parseFloat(bmi),
         createdAt: new Date().toISOString(),
       });
-      router.push("./cycle");
+      router.push("./login");
     } catch (error) {
       handleAuthError(error);
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const handleAuthError = (error: unknown) => {
     let errorMessage = "Registration failed";
@@ -531,7 +533,7 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#4B0082", // Matching indigo theme
+    backgroundColor: "#4B0082", //indigo theme
   },
   scrollContainer: {
     flexGrow: 1,

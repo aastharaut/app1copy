@@ -303,7 +303,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     );
     pulseAnimation.start();
 
-    return () => pulseAnimation.stop();
+    return () => pulseAnimation.reset();
   }, []);
 
   useEffect(() => {
@@ -312,8 +312,8 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
         const cycleData = await getCurrentCycle(userId);
         if (cycleData) {
           setCycle(cycleData);
-          setStreak(calculateStreak(cycleData.trackedDays));
-          
+          setStreak(calculateStreak(cycleData.trackedDays ?? []));
+    
           const today = new Date();
           const startDate = new Date(cycleData.startDate);
           const diffDays = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -325,6 +325,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
         setLoading(false);
       }
     };
+    
 
     fetchCycleData();
   }, [userId]);

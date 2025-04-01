@@ -23,7 +23,7 @@ export interface DailyLog {
 export const addDailyLog = async (userId: string, date: Date, logData: DailyLog): Promise<string> => {
   try {
     const dateString = new Date(date).toISOString().split('T')[0];
-    const logRef = doc(db, `users/${userId}/daily_logs/${dateString}`);
+    const logRef = doc(collection(db, `users/${userId}/daily_logs`), dateString);
 
     await setDoc(logRef, {
       date: Timestamp.fromDate(new Date(date)),
@@ -49,7 +49,7 @@ export const addDailyLog = async (userId: string, date: Date, logData: DailyLog)
 // Get daily logs for a date range
 export const getDailyLogs = async (userId: string, startDate: Date, endDate: Date): Promise<DailyLog[]> => {
   try {
-    const logsRef = collection(db, `users/${userId}/daily_logs`);
+    const logsRef = collection(doc(db, "users", userId), "daily_logs");
     const start = Timestamp.fromDate(new Date(startDate));
     const end = Timestamp.fromDate(new Date(endDate));
 
