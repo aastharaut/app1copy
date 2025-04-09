@@ -21,7 +21,7 @@ export default function LoginScreen() {
   
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace("../Navigation/cycle"); //Updated path
+      router.replace("/tabs/Cycle"); //Updated path
     } catch (error) {
       const err = error as FirebaseError; //Explicitly type the error
       Alert.alert("Login Failed", err.message || "An unknown error occurred");

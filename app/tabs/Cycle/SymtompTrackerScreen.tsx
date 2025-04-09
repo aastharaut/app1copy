@@ -65,70 +65,70 @@ const SymptomTrackerScreen = () => {
       name: 'Period',
       selected: 1,
       options: [
-        require('../../assets/symptoms/medicine.png'),
-        require('../../assets/symptoms/blood_2.png'),
-        require('../../assets/symptoms/blood.png'),
-        require('../../assets/symptoms/blood_3.png')
+        require('../../../assets/symptoms/medicine.png'),
+        require('../../../assets/symptoms/blood_2.png'),
+        require('../../../assets/symptoms/blood.png'),
+        require('../../../assets/symptoms/blood_3.png')
       ]
     },
     {
       name: 'Feelings',
       selected: 3,
       options: [
-        require('../../assets/symptoms/happy.png'),
-        require('../../assets/symptoms/worried.png'),
-        require('../../assets/symptoms/emotions.png'),
-        require('../../assets/symptoms/drunk.png')
+        require('../../../assets/symptoms/happy.png'),
+        require('../../../assets/symptoms/worried.png'),
+        require('../../../assets/symptoms/emotions.png'),
+        require('../../../assets/symptoms/drunk.png')
       ]
     },
     {
       name: 'Pain',
       selected: null,
       options: [
-        require('../../assets/symptoms/pain_1.png'),
-        require('../../assets/symptoms/pain_3.png'),
-        require('../../assets/symptoms/breast.png'),
-        require('../../assets/symptoms/pain_in_joints.png')
+        require('../../../assets/symptoms/pain_1.png'),
+        require('../../../assets/symptoms/pain_3.png'),
+        require('../../../assets/symptoms/breast.png'),
+        require('../../../assets/symptoms/pain_in_joints.png')
       ]
     },
     {
       name: 'Energy',
       selected: null,
       options: [
-        require('../../assets/symptoms/lotus.png'),
-        require('../../assets/symptoms/corpse.png'),
-        require('../../assets/symptoms/extended.png'),
-        require('../../assets/symptoms/women.png')
+        require('../../../assets/symptoms/lotus.png'),
+        require('../../../assets/symptoms/corpse.png'),
+        require('../../../assets/symptoms/extended.png'),
+        require('../../../assets/symptoms/women.png')
       ]
     },
     {
       name: 'Cravings',
       selected: null,
       options: [
-        require('../../assets/symptoms/chips.png'),
-        require('../../assets/symptoms/burger.png'),
-        require('../../assets/symptoms/curry.png'),
-        require('../../assets/symptoms/ice_cream.png')
+        require('../../../assets/symptoms/chips.png'),
+        require('../../../assets/symptoms/burger.png'),
+        require('../../../assets/symptoms/curry.png'),
+        require('../../../assets/symptoms/ice_cream.png')
       ]
     },
     {
       name: 'Skin',
       selected: null,
       options: [
-        require('../../assets/symptoms/skin_1.png'),
-        require('../../assets/symptoms/skin_2.png'),
-        require('../../assets/symptoms/skin_3.png'),
-        require('../../assets/symptoms/skin.png')
+        require('../../../assets/symptoms/skin_1.png'),
+        require('../../../assets/symptoms/skin_2.png'),
+        require('../../../assets/symptoms/skin_3.png'),
+        require('../../../assets/symptoms/skin.png')
       ]
     },
     {
       name: 'Exercise',
       selected: null,
       options: [
-        require('../../assets/symptoms/dumbbell.png'),
-        require('../../assets/symptoms/treadmill.png'),
-        require('../../assets/symptoms/yoga_mat.png'),
-        require('../../assets/symptoms/rings.png')
+        require('../../../assets/symptoms/dumbbell.png'),
+        require('../../../assets/symptoms/treadmill.png'),
+        require('../../../assets/symptoms/yoga_mat.png'),
+        require('../../../assets/symptoms/rings.png')
       ]
     }
   ];

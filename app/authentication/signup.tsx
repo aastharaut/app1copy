@@ -369,7 +369,7 @@ export default function SignUpScreen() {
       //Send email verification (security best practice)
       await sendEmailVerification(userCredential.user);
 
-      router.push("/Navigation/Cycle/userperiod");
+      router.push("/tabs/Cycle/userperiod");
     } catch (error) {
       handleAuthError(error);
     } finally {

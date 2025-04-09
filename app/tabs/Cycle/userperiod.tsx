@@ -1235,7 +1235,7 @@ export default function UserPeriodScreen() {
         { merge: true } //Critical: merges with existing doc
       );
   
-      router.replace("/Navigation/cycle");
+      router.replace("/tabs/Cycle");
     } catch (err) {
       console.error("Firebase update error:", err);
       Alert.alert("Error", "Failed to save data.");

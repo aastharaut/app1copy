@@ -176,7 +176,7 @@
 // export default CycleScreen;
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
-import AppCurrentCycle from '../Cycle/AppCurrentCycle';
+import AppCurrentCycle from './AppCurrentCycle';
 import { useAuth } from '../../context/AuthContext';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
@@ -215,7 +215,7 @@ const CycleScreen = () => {
 
   useEffect(() => {
     if (!loading && !hasData && user) {
-      router.replace("/Navigation/Cycle/userperiod");
+      router.replace("/tabs/Cycle/userperiod");
     }
   }, [loading, hasData, user, router]);
 

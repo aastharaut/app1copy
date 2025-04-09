@@ -44,7 +44,7 @@ const _layout = () => {
         }}
       />
 
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="cycle"
         options={{
           title: "Cycle",
@@ -52,7 +52,20 @@ const _layout = () => {
             <MaterialCommunityIcons name="selection-ellipse" size={size} color={color} />
           ),
         }}
+      /> */}
+      <Tabs.Screen
+  name="Cycle"
+  options={{
+    title: "Cycle",
+    tabBarIcon: ({ color, size }) => (
+      <MaterialCommunityIcons 
+        name="selection-ellipse" 
+        size={size} 
+        color={color} 
       />
+    )
+  }}
+/>
 
       <Tabs.Screen
         name="Moniqa"
