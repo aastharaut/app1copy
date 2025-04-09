@@ -1095,7 +1095,249 @@
 //   },
 // });
 
-import React, { useState, useEffect } from "react";
+// import React, { useState } from "react";
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   TextInput,
+//   TouchableOpacity,
+//   Platform,
+//   KeyboardAvoidingView,
+//   ScrollView,
+//   Alert,
+// } from "react-native";
+// import DateTimePicker from "@react-native-community/datetimepicker";
+// import { useRouter } from "expo-router";
+// import { Ionicons } from "@expo/vector-icons";
+// import { doc, setDoc, serverTimestamp, addDoc, collection } from 'firebase/firestore';
+// import { auth, db } from '../../../FirebaseConfig'; // Import from your config file
+
+// export default function UserPeriodScreen() {
+//   const router = useRouter();
+
+//   // Form state
+//   const [lastPeriodDate1, setLastPeriodDate1] = useState(new Date());
+//   const [lastPeriodDate2, setLastPeriodDate2] = useState(new Date());
+//   const [showPicker1, setShowPicker1] = useState(false);
+//   const [showPicker2, setShowPicker2] = useState(false);
+//   const [periodLength, setPeriodLength] = useState("");
+//   const [cycleLength, setCycleLength] = useState(28); // Default cycle length
+
+//   // Calculate cycle length whenever period dates change
+//   React.useEffect(() => {
+//     calculateCycleLength();
+//   }, [lastPeriodDate1, lastPeriodDate2]);
+
+//   // Calculate cycle length based on the two provided dates
+//   const calculateCycleLength = () => {
+//     const date1 = new Date(lastPeriodDate1);
+//     const date2 = new Date(lastPeriodDate2);
+    
+//     // Ensure we calculate the absolute difference
+//     if (date1 > date2) {
+//       const diffTime = Math.abs(date1.getTime() - date2.getTime());
+//       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+//       setCycleLength(diffDays);
+//     } else if (date2 > date1) {
+//       const diffTime = Math.abs(date2.getTime() - date1.getTime());
+//       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+//       setCycleLength(diffDays);
+//     }
+//   };
+
+//   const handleSubmit = async () => {
+//     // Input validation
+//     if (!periodLength || isNaN(Number(periodLength))) {
+//       Alert.alert("Invalid Input", "Please enter a valid period length.");
+//       return;
+//     }
+
+//     const periodLengthNum = Number(periodLength);
+//     if (periodLengthNum <= 0 || periodLengthNum > 15) {
+//       Alert.alert("Invalid Input", "Period length should be between 1 and 15 days.");
+//       return;
+//     }
+
+//     try {
+//       const user = auth.currentUser;
+//       if (!user) throw new Error("User not authenticated");
+
+//       // Create a new document in the 'cycles' collection with only input data
+//       const cyclesRef = collection(db, "cycles"); // Use user ID as the document ID
+//       await addDoc(cyclesRef, {
+//         userId: user.uid,// Link this cycle data to the user
+//         lastPeriodDate1, // Most recent period
+//         lastPeriodDate2, // Previous period
+//         periodLength: periodLengthNum,
+//         cycleLength,
+        
+//         // Metadata
+//         createdAt: serverTimestamp(),
+//         lastUpdated: serverTimestamp(),
+//         isProfileComplete: true
+//       });
+  
+//       // Navigate to the cycle view screen
+//       router.replace("/tabs/Cycle");
+//     } catch (err) {
+//       console.error("Firebase update error:", err);
+//       Alert.alert("Error", "Failed to save data.");
+//     }
+//   };
+
+//   return (
+//     <KeyboardAvoidingView
+//       behavior={Platform.OS === "ios" ? "padding" : undefined}
+//       style={styles.container}
+//     >
+//       <ScrollView contentContainerStyle={styles.scrollContainer}>
+//         <Text style={styles.header}>Track Your Period</Text>
+
+//         <Text style={styles.label}>Most Recent Period Start Date</Text>
+//         <TouchableOpacity onPress={() => setShowPicker1(true)} style={styles.inputContainer}>
+//           <Ionicons name="calendar-outline" size={20} color="#fff" style={styles.icon} />
+//           <Text style={styles.inputText}>
+//             {lastPeriodDate1.toDateString()}
+//           </Text>
+//         </TouchableOpacity>
+//         {showPicker1 && (
+//           <DateTimePicker
+//             value={lastPeriodDate1}
+//             mode="date"
+//             display="default"
+//             maximumDate={new Date()}
+//             onChange={(event, selectedDate) => {
+//               setShowPicker1(false);
+//               if (selectedDate) setLastPeriodDate1(selectedDate);
+//             }}
+//           />
+//         )}
+
+//         <Text style={styles.label}>Previous Period Start Date</Text>
+//         <TouchableOpacity onPress={() => setShowPicker2(true)} style={styles.inputContainer}>
+//           <Ionicons name="calendar-outline" size={20} color="#fff" style={styles.icon} />
+//           <Text style={styles.inputText}>
+//             {lastPeriodDate2.toDateString()}
+//           </Text>
+//         </TouchableOpacity>
+//         {showPicker2 && (
+//           <DateTimePicker
+//             value={lastPeriodDate2}
+//             mode="date"
+//             display="default"
+//             maximumDate={new Date()}
+//             onChange={(event, selectedDate) => {
+//               setShowPicker2(false);
+//               if (selectedDate) setLastPeriodDate2(selectedDate);
+//             }}
+//           />
+//         )}
+
+//         <Text style={styles.label}>Period Length (in days)</Text>
+//         <View style={styles.inputContainer}>
+//           <Ionicons name="calendar-outline" size={20} color="#fff" style={styles.icon} />
+//           <TextInput
+//             style={styles.input}
+//             placeholder="e.g. 5"
+//             placeholderTextColor="#CCC"
+//             keyboardType="number-pad"
+//             value={periodLength}
+//             onChangeText={setPeriodLength}
+//           />
+//         </View>
+
+//         <View style={styles.cycleInfoContainer}>
+//           <Text style={styles.cycleInfoText}>
+//             Estimated cycle length: {cycleLength} days
+//           </Text>
+//           <Text style={styles.cycleInfoSubtext}>
+//             (Calculated from your provided period dates)
+//           </Text>
+//         </View>
+
+//         <TouchableOpacity
+//           style={styles.submitButton}
+//           onPress={handleSubmit}
+//         >
+//           <Text style={styles.submitText}>Continue</Text>
+//         </TouchableOpacity>
+//       </ScrollView>
+//     </KeyboardAvoidingView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: "#121212",
+//   },
+//   scrollContainer: {
+//     padding: 20,
+//   },
+//   header: {
+//     fontSize: 28,
+//     fontWeight: "bold",
+//     color: "#fff",
+//     marginBottom: 30,
+//     textAlign: "center",
+//   },
+//   label: {
+//     fontSize: 16,
+//     color: "#fff",
+//     marginBottom: 8,
+//   },
+//   inputContainer: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "#333",
+//     borderRadius: 10,
+//     paddingHorizontal: 12,
+//     paddingVertical: 12,
+//     marginBottom: 20,
+//   },
+//   icon: {
+//     marginRight: 10,
+//   },
+//   input: {
+//     flex: 1,
+//     color: "#fff",
+//     fontSize: 16,
+//   },
+//   inputText: {
+//     color: "#fff",
+//     fontSize: 16,
+//   },
+//   cycleInfoContainer: {
+//     backgroundColor: "rgba(255, 255, 255, 0.1)",
+//     padding: 12,
+//     borderRadius: 10,
+//     marginVertical: 10,
+//   },
+//   cycleInfoText: {
+//     color: "#fff",
+//     fontSize: 16,
+//     fontWeight: "500",
+//   },
+//   cycleInfoSubtext: {
+//     color: "#ccc",
+//     fontSize: 12,
+//     marginTop: 4,
+//   },
+//   submitButton: {
+//     backgroundColor: "#FF6B6B",
+//     paddingVertical: 15,
+//     borderRadius: 10,
+//     alignItems: "center",
+//     marginTop: 20,
+//   },
+//   submitText: {
+//     color: "#fff",
+//     fontSize: 18,
+//     fontWeight: "bold",
+//   },
+// });
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -1110,14 +1352,13 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { getFirestore, updateDoc } from "firebase/firestore";
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, addDoc, collection } from 'firebase/firestore';
 import { auth, db } from '../../../FirebaseConfig'; // Import from your config file
 
 export default function UserPeriodScreen() {
   const router = useRouter();
-  const db = getFirestore();
 
+  // Form state
   const [lastPeriodDate1, setLastPeriodDate1] = useState(new Date());
   const [lastPeriodDate2, setLastPeriodDate2] = useState(new Date());
   const [showPicker1, setShowPicker1] = useState(false);
@@ -1126,7 +1367,7 @@ export default function UserPeriodScreen() {
   const [cycleLength, setCycleLength] = useState(28); // Default cycle length
 
   // Calculate cycle length whenever period dates change
-  useEffect(() => {
+  React.useEffect(() => {
     calculateCycleLength();
   }, [lastPeriodDate1, lastPeriodDate2]);
 
@@ -1135,7 +1376,7 @@ export default function UserPeriodScreen() {
     const date1 = new Date(lastPeriodDate1);
     const date2 = new Date(lastPeriodDate2);
     
-    // Ensure date1 is the more recent date
+    // Ensure we calculate the absolute difference
     if (date1 > date2) {
       const diffTime = Math.abs(date1.getTime() - date2.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -1147,53 +1388,8 @@ export default function UserPeriodScreen() {
     }
   };
 
-  // Calculate next period date based on the most recent period and cycle length
-  const calculateNextPeriodDate = () => {
-    // Determine most recent period date
-    const mostRecentDate = lastPeriodDate1 > lastPeriodDate2 ? lastPeriodDate1 : lastPeriodDate2;
-    const nextPeriod = new Date(mostRecentDate);
-    nextPeriod.setDate(nextPeriod.getDate() + cycleLength);
-    return nextPeriod;
-  };
-
-  // Calculate ovulation date (typically 14 days before next period)
-  const calculateOvulationDate = (nextPeriodDate: Date): Date => {
-    const ovulation = new Date(nextPeriodDate);
-    ovulation.setDate(ovulation.getDate() - 14); // Standard luteal phase is ~14 days
-    return ovulation;
-  };
-
-  // Calculate current cycle day and phase
-  const calculateCurrentCycleInfo = () => {
-    const today = new Date();
-    const mostRecentDate = lastPeriodDate1 > lastPeriodDate2 ? lastPeriodDate1 : lastPeriodDate2;
-    const diffTime = Math.abs(today.getTime() - mostRecentDate.getTime());
-    let currentCycleDay = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 because day 1 is first day of period
-    
-    // Adjust if we're beyond the expected cycle length
-    if (currentCycleDay > cycleLength) {
-      currentCycleDay = currentCycleDay % cycleLength;
-      if (currentCycleDay === 0) currentCycleDay = cycleLength;
-    }
-    
-    // Determine the current phase
-    const periodLengthNum = Number(periodLength) || 5; // Default to 5 if not provided
-    let currentPhase = "";
-    
-    if (currentCycleDay <= periodLengthNum) {
-      currentPhase = "Menstrual Phase";
-    } else if (currentCycleDay <= cycleLength - 14) {
-      currentPhase = "Follicular Phase";
-    } else if (currentCycleDay <= cycleLength - 10) {
-      currentPhase = "Ovulatory Phase";
-    } else {
-      currentPhase = "Luteal Phase";
-    }
-    
-    return { currentCycleDay, currentPhase };
-  };
-
   const handleSubmit = async () => {
+    // Input validation
     if (!periodLength || isNaN(Number(periodLength))) {
       Alert.alert("Invalid Input", "Please enter a valid period length.");
       return;
@@ -1205,36 +1401,41 @@ export default function UserPeriodScreen() {
       return;
     }
 
-    const nextPeriod = calculateNextPeriodDate();
-    const ovulation = calculateOvulationDate(nextPeriod);
-    const { currentCycleDay, currentPhase } = calculateCurrentCycleInfo();
-    
     try {
       const user = auth.currentUser;
       if (!user) throw new Error("User not authenticated");
-      // SAFE DOCUMENT UPDATE (key fix: uses setDoc + merge)
-      await setDoc(
-        doc(db, "users", user.uid), // Consistent with signup.tsx ("users" lowercase)
-        {
-          // Period data
-          lastPeriodDate1,
-          lastPeriodDate2,
-          periodLength: periodLengthNum,
-          cycleLength,
-          
-          // Calculated fields
-          predictedNextPeriodDate: nextPeriod,
-          predictedOvulationDate: ovulation,
-          currentCycleDay,
-          currentPhase,
-          
-          // Metadata
-          isProfileComplete: true, // Mark onboarding complete
-          lastUpdated: serverTimestamp() // Better than new Date()
-        },
-        { merge: true } //Critical: merges with existing doc
-      );
+
+      console.log("Submitting cycle data for user:", user.uid);
+
+      // SOLUTION 1: Store data in both locations for compatibility
+      // 1. Create document in cycles collection with userId field
+      const cycleData = {
+        userId: user.uid,
+        lastPeriodDate1, 
+        lastPeriodDate2, 
+        periodLength: periodLengthNum,
+        cycleLength,
+        createdAt: serverTimestamp(),
+        lastUpdated: serverTimestamp(),
+        isProfileComplete: true
+      };
+      
+      // Add to cycles collection with auto-generated ID
+      await addDoc(collection(db, "cycles"), cycleData);
+      
+      // 2. Also store in the user document for backwards compatibility
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(userRef, {
+        lastPeriodDate1,
+        lastPeriodDate2,
+        periodLength: periodLengthNum,
+        cycleLength,
+        lastUpdated: serverTimestamp()
+      }, { merge: true }); // Use merge to not overwrite other user data
   
+      console.log("Data saved successfully");
+      
+      // Navigate to the cycle view screen
       router.replace("/tabs/Cycle");
     } catch (err) {
       console.error("Firebase update error:", err);

@@ -235,7 +235,7 @@ export const logoutUser = async (): Promise<void> => {
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {
   try {
     // Using "Users" collection to match your SignUpScreen
-    const userDoc = await getDoc(doc(db, 'Users', userId));
+    const userDoc = await getDoc(doc(db, 'users', userId));
     if (userDoc.exists()) {
       console.log("User profile retrieved:", userDoc.data());
       return userDoc.data() as UserProfile;
@@ -254,7 +254,7 @@ export const updateUserProfile = async (
   profileData: Partial<UserProfile>
 ): Promise<void> => {
   try {
-    await updateDoc(doc(db, 'Users', userId), {
+    await updateDoc(doc(db, 'users', userId), {
       ...profileData,
       updatedAt: Timestamp.now()
     });
@@ -268,7 +268,7 @@ export const updateUserProfile = async (
 // Update Last Login
 export const updateLastLogin = async (userId: string): Promise<void> => {
   try {
-    await updateDoc(doc(db, 'Users', userId), {
+    await updateDoc(doc(db, 'users', userId), {
       lastLogin: Timestamp.now(),
     });
     console.log("Last login updated");

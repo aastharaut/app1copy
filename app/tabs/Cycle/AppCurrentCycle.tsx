@@ -857,8 +857,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Flame } from 'lucide-react-native';
-import { getFirestore, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
-
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 interface CycleTrackerProps {
   userId: string;
 }
@@ -869,8 +868,8 @@ interface UserCycleData {
   lastPeriodDate2: Timestamp | Date;
   periodLength: number;
   cycleLength: number;
-  predictedNextPeriodDate: Timestamp | Date;
-  predictedOvulationDate: Timestamp | Date;
+  predictedNextPeriodDate?: Timestamp | Date;
+  predictedOvulationDate?: Timestamp | Date;
   currentCycleDay?: number;
   currentPhase?: string;
   lastUpdated?: Timestamp | Date;
@@ -887,10 +886,13 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
   const [currentPhase, setCurrentPhase] = useState<string>('');
   const [cycleLength, setCycleLength] = useState(28);
   const [periodLength, setPeriodLength] = useState(5);
+  const [nextPeriod, setNextPeriod] = useState<Date | null>(null);
+  const [ovulationDate, setOvulationDate] = useState<Date | null>(null);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [trackedDays, setTrackedDays] = useState<number[]>([]);
+  const [cycleDocId, setCycleDocId] = useState<string | null>(null);
   
   // Use useRef for the animated value
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -920,6 +922,38 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
       pulseAnimation.stop();
     };
   }, [pulseAnim]);
+
+  // Calculate next period date based on the most recent period and cycle length
+  const calculateNextPeriodDate = (userData: UserCycleData): Date => {
+    // Determine most recent period date
+    let lastPeriod1: Date;
+    let lastPeriod2: Date;
+    
+    // Convert Firestore Timestamp to Date if needed
+    if (userData.lastPeriodDate1 instanceof Timestamp) {
+      lastPeriod1 = userData.lastPeriodDate1.toDate();
+    } else {
+      lastPeriod1 = new Date(userData.lastPeriodDate1);
+    }
+    
+    if (userData.lastPeriodDate2 instanceof Timestamp) {
+      lastPeriod2 = userData.lastPeriodDate2.toDate();
+    } else {
+      lastPeriod2 = new Date(userData.lastPeriodDate2);
+    }
+    
+    const mostRecentDate = lastPeriod1 > lastPeriod2 ? lastPeriod1 : lastPeriod2;
+    const nextPeriod = new Date(mostRecentDate);
+    nextPeriod.setDate(nextPeriod.getDate() + userData.cycleLength);
+    return nextPeriod;
+  };
+
+  // Calculate ovulation date (typically 14 days before next period)
+  const calculateOvulationDate = (nextPeriodDate: Date): Date => {
+    const ovulation = new Date(nextPeriodDate);
+    ovulation.setDate(ovulation.getDate() - 14); // Standard luteal phase is ~14 days
+    return ovulation;
+  };
 
   // Calculate current cycle day and phase
   const calculateCurrentCycleInfo = (userData: UserCycleData) => {
@@ -977,7 +1011,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     return streak;
   };
 
-  // Fetch user data from Firestore
+  // Fetch user data from Firestore - UPDATED to handle multiple data locations
   const fetchUserData = async () => {
     if (!userId) {
       setError('User ID is required');
@@ -988,47 +1022,106 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     try {
       setLoading(true);
       setError(null);
+      console.log("Fetching cycle data for user:", userId);
 
       const db = getFirestore();
+      
+      // SOLUTION: Try multiple data locations
+      
+      // First attempt: Look in cycles collection where userId field matches
+      const cyclesRef = collection(db, "cycles");
+      const q = query(cyclesRef, where("userId", "==", userId));
+      const querySnapshot = await getDocs(q);
+      
+      console.log("Cycles collection query results:", {
+        empty: querySnapshot.empty,
+        count: querySnapshot.size
+      });
+      
+      if (!querySnapshot.empty) {
+        // Use the first document found
+        const cycleDoc = querySnapshot.docs[0];
+        const data = cycleDoc.data() as UserCycleData;
+        setUserData(data);
+        setCycleDocId(cycleDoc.id); // Store document ID for updates
+        
+        processUserData(data, cycleDoc.id);
+        return;
+      }
+      
+      // Second attempt: Try looking directly in users collection
+      console.log("No data in cycles collection, checking users collection");
       const userRef = doc(db, "users", userId);
       const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const data = userSnap.data() as UserCycleData;
-        setUserData(data);
+      
+      if (userSnap.exists() && userSnap.data().lastPeriodDate1) {
+        const userData = userSnap.data() as UserCycleData;
+        setUserData(userData);
         
-        // Set cycle properties
-        setCycleLength(data.cycleLength || 28);
-        setPeriodLength(data.periodLength || 5);
-        setTrackedDays(data.trackedDays || []);
+        // Also store this data in cycles collection for future access
+        const newCycleRef = await addDoc(collection(db, "cycles"), {
+          ...userData,
+          userId,
+          createdAt: new Date(),
+          lastUpdated: new Date()
+        });
         
-        // Calculate streak
-        setStreak(calculateStreak(data.trackedDays || []));
-        
-        // Calculate or use saved current day and phase
-        if (data.currentCycleDay && data.currentPhase) {
-          setCurrentDay(data.currentCycleDay);
-          setCurrentPhase(data.currentPhase);
-        } else {
-          const { currentCycleDay, currentPhase } = calculateCurrentCycleInfo(data);
-          setCurrentDay(currentCycleDay);
-          setCurrentPhase(currentPhase);
-          
-          // Update the user document with calculated values
-          await updateDoc(userRef, {
-            currentCycleDay,
-            currentPhase,
-            lastUpdated: new Date()
-          });
-        }
-      } else {
-        setUserData(null);
+        setCycleDocId(newCycleRef.id);
+        processUserData(userData, newCycleRef.id);
+        return;
       }
+      
+      // No data found
+      console.log("No cycle data found in any location");
+      setUserData(null);
+      
     } catch (error) {
       console.error('Error loading user data:', error);
       setError('Failed to load cycle data. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Helper function to process user data after fetching
+  const processUserData = async (data: UserCycleData, docId: string) => {
+    // Set cycle properties
+    setCycleLength(data.cycleLength || 28);
+    setPeriodLength(data.periodLength || 5);
+    setTrackedDays(data.trackedDays || []);
+    
+    // Calculate streak
+    setStreak(calculateStreak(data.trackedDays || []));
+    
+    // Calculate predictions
+    const nextPeriodDate = calculateNextPeriodDate(data);
+    const ovulationDate = calculateOvulationDate(nextPeriodDate);
+    setNextPeriod(nextPeriodDate);
+    setOvulationDate(ovulationDate);
+    
+    // Calculate current day and phase
+    const { currentCycleDay, currentPhase } = calculateCurrentCycleInfo(data);
+    setCurrentDay(currentCycleDay);
+    setCurrentPhase(currentPhase);
+    
+    const db = getFirestore();
+    
+    // Update the document with calculated values
+    try {
+      // Try to update the document - either in cycles collection or users collection
+      if (docId) {
+        const cycleRef = doc(db, "cycles", docId);
+        await updateDoc(cycleRef, {
+          predictedNextPeriodDate: nextPeriodDate,
+          predictedOvulationDate: ovulationDate,
+          currentCycleDay,
+          currentPhase,
+          lastUpdated: new Date()
+        });
+      }
+    } catch (error) {
+      console.error("Error updating calculated values:", error);
+      // Non-blocking error - don't show to user
     }
   };
 
@@ -1039,11 +1132,14 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
 
   // Handle daily log button press
   const handleDailyLog = async () => {
-    if (!userData || !userId) return;
+    if (!userData || !userId || !cycleDocId) {
+      Alert.alert('Error', 'Unable to log data. Please refresh the page.');
+      return;
+    }
 
     try {
       const db = getFirestore();
-      const userRef = doc(db, "users", userId);
+      const cycleRef = doc(db, "cycles", cycleDocId);
       
       // Add current day to tracked days if not already included
       const updatedTrackedDays = [...(trackedDays || [])];
@@ -1051,7 +1147,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
         updatedTrackedDays.push(currentDay);
       }
       
-      await updateDoc(userRef, {
+      await updateDoc(cycleRef, {
         trackedDays: updatedTrackedDays,
         lastUpdated: new Date()
       });
@@ -1063,30 +1159,6 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
       console.error('Error logging day:', error);
       Alert.alert('Error', 'Could not log today. Please try again.');
     }
-  };
-
-  // Handle new cycle button press - redirect to UserPeriodScreen
-  const handleStartNewCycle = () => {
-    Alert.alert(
-      'Start New Cycle',
-      'This will take you to update your period information. Continue?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Continue',
-          onPress: () => {
-            // Use navigation to navigate to UserPeriodScreen
-            // This would require passing navigation as a prop or using a navigation hook
-            // For now, just show an alert
-            Alert.alert('Navigation', 'This would navigate to the Period Input screen');
-            // Ideally: navigation.navigate('UserPeriod');
-          },
-        },
-      ]
-    );
   };
 
   if (loading) {
@@ -1113,9 +1185,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     return (
       <ScrollView contentContainerStyle={styles.centeredContainer}>
         <Text style={styles.noCycleText}>No period data found</Text>
-        <TouchableOpacity style={styles.button} onPress={handleStartNewCycle}>
-          <Text style={styles.buttonText}>Enter Period Information</Text>
-        </TouchableOpacity>
+        <Text style={styles.errorText}>Please add your period information to get started</Text>
       </ScrollView>
     );
   }
@@ -1171,6 +1241,12 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     });
   };
 
+  // Format dates for display
+  const formatDate = (date: Date | null) => {
+    if (!date) return "N/A";
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>
@@ -1180,6 +1256,18 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
       <Text style={styles.phaseText}>
         {currentPhase}
       </Text>
+
+      <View style={styles.cycleInfoCards}>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoLabel}>Next Period</Text>
+          <Text style={styles.infoValue}>{formatDate(nextPeriod)}</Text>
+        </View>
+        
+        <View style={styles.infoCard}>
+          <Text style={styles.infoLabel}>Ovulation</Text>
+          <Text style={styles.infoValue}>{formatDate(ovulationDate)}</Text>
+        </View>
+      </View>
 
       <View style={styles.circleContainer}>{renderDayMarkers()}</View>
 
@@ -1207,10 +1295,6 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
               <Text style={styles.streakText}>{streak}</Text>
             </View>
           )}
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={handleStartNewCycle}>
-          <Text style={styles.buttonText}>Start New Cycle</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -1241,7 +1325,30 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FF6B6B',
     textAlign: 'center',
+    marginBottom: 10,
+  },
+  cycleInfoCards: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 20,
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+    padding: 12,
+    margin: 5,
+    alignItems: 'center',
+  },
+  infoLabel: {
+    color: '#ccc',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  infoValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   circleContainer: {
     width: circleSize,
@@ -1288,9 +1395,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
   },
-  secondaryButton: {
-    backgroundColor: '#444',
-  },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
@@ -1316,27 +1420,25 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#FF6B6B',
-    marginBottom: 20,
     textAlign: 'center',
+    marginBottom: 20,
   },
   noCycleText: {
     color: '#fff',
     fontSize: 18,
-    marginBottom: 20,
-    textAlign: 'center',
+    marginBottom: 10,
   },
   legendContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 10,
     marginBottom: 20,
     flexWrap: 'wrap',
-    gap: 15,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 5,
+    marginHorizontal: 10,
+    marginVertical: 5,
   },
   legendDot: {
     width: 12,

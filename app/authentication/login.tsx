@@ -6,8 +6,8 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../FirebaseConfig"; // Adjust path if needed
-import { FirebaseError } from "firebase/app"; // Import this at the top
+import { auth } from "../../FirebaseConfig"; 
+import { FirebaseError } from "firebase/app";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function LoginScreen() {
   
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/tabs/Cycle"); //Updated path
+      router.replace("/tabs/Cycle"); //cyclescreen path
     } catch (error) {
       const err = error as FirebaseError; //Explicitly type the error
       Alert.alert("Login Failed", err.message || "An unknown error occurred");

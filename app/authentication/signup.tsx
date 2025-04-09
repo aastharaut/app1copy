@@ -355,15 +355,7 @@ export default function SignUpScreen() {
         email,
         age: parseInt(age),
         BMI: parseFloat(bmi),
-        
-        // Period data (initialized empty)
-        lastPeriodDate1: null,
-        lastPeriodDate2: null,
-        periodLength: null,
-        cycleLength: null,
-        predictedNextPeriod: null,
-
-        createdAt: serverTimestamp(), //Better than new Date().toISOString()
+       createdAt: serverTimestamp(), //Better than new Date().toISOString()
         isProfileComplete: false // Flag for onboarding
       });
       //Send email verification (security best practice)
