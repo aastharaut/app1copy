@@ -1,0 +1,4 @@
+firebase_functions~=0.4.2
+scikit-learn==1.6.1
+numpy==1.24.3
+firebase-admin>=11.0.0

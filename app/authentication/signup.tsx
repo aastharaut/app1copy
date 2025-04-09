@@ -324,11 +324,11 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   updateProfile,
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "../../FirebaseConfig";
-//import { registerUser } from "@/api/users";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -349,15 +349,27 @@ export default function SignUpScreen() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
-      const userDocRef = doc(db, "Users", userCredential.user.uid);
+      const userDocRef = doc(db, "users", userCredential.user.uid);
       await setDoc(userDocRef, {
         name,
         email,
         age: parseInt(age),
         BMI: parseFloat(bmi),
-        createdAt: new Date().toISOString(),
+        
+        // Period data (initialized empty)
+        lastPeriodDate1: null,
+        lastPeriodDate2: null,
+        periodLength: null,
+        cycleLength: null,
+        predictedNextPeriod: null,
+
+        createdAt: serverTimestamp(), //Better than new Date().toISOString()
+        isProfileComplete: false // Flag for onboarding
       });
-      router.push("./login");
+      //Send email verification (security best practice)
+      await sendEmailVerification(userCredential.user);
+
+      router.push("/Navigation/Cycle/userperiod");
     } catch (error) {
       handleAuthError(error);
     } finally {
@@ -391,6 +403,7 @@ export default function SignUpScreen() {
   const goToLogin = () => {
     router.push("/authentication/login");
   };
+
   const isFormValid = () => {
     return (
       name.trim() !== "" &&

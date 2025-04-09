@@ -206,11 +206,18 @@ import { db, auth } from '../FirebaseConfig';
 
 // Define User interface
 export interface UserProfile {
-  name: string;  // Using 'name' instead of 'username' to match SignUpScreen
+  name: string;
   email: string;
   age?: number;
   BMI?: number;
   createdAt: Timestamp;
+  lastPeriodDate1: Timestamp;  // New field
+  lastPeriodDate2: Timestamp;  // New field
+  averageCycleLength: number;  // New field
+  averagePeriodLength: number;  // New field
+  nextPeriodDate: Timestamp;  // New field
+  ovulationDate: Timestamp;  // New field
+  cycleDay: number;  // New field
 }
 
 // Logout Function

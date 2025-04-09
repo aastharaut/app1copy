@@ -1,39 +1,8 @@
-// // Import the functions you need from the SDKs you need
-// import { initializeApp } from "firebase/app";
-// import {initializeAuth , getReactNativePersistence} from 'firebase/auth';
-// import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-// //import { getAnalytics } from "firebase/analytics";
-// import { getFirestore, Timestamp } from 'firebase/firestore';
-// // TODO: Add SDKs for Firebase products that you want to use
-// // https://firebase.google.com/docs/web/setup#available-libraries
-
-// // Your web app's Firebase configuration
-// // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-// const firebaseConfig = {
-//   apiKey: "AIzaSyCRI4-1kYFoqiUjEYT4AOnUSG9amMS4nLE",
-//   authDomain: "hormoniq-8420b.firebaseapp.com",
-//   projectId: "hormoniq-8420b",
-//   storageBucket: "hormoniq-8420b.firebasestorage.app",
-//   messagingSenderId: "333974410288",
-//   appId: "1:333974410288:web:a13bc2ac347ef7a68fc9f5",
-//   measurementId: "G-61VFHJTV5S"
-// };
-
-// // Initialize Firebase
-// export const app = initializeApp(firebaseConfig);
-// //export const analytics = getAnalytics(app);
-// // Initialize Firestore
-// export const db = getFirestore(app);
-// export { Timestamp };
-// export const auth = initializeAuth(app, {
-//     persistence:getReactNativePersistence(ReactNativeAsyncStorage)
-// });
-
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import {initializeAuth , getReactNativePersistence} from 'firebase/auth';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import { getAnalytics } from "firebase/analytics";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore, Timestamp } from 'firebase/firestore';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -52,17 +21,18 @@ const firebaseConfig = {
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
-export const analytics = getAnalytics(app);
+//export const analytics = getAnalytics(app);
 // Initialize Firestore
 export const db = getFirestore(app);
 export { Timestamp };
 export const auth = initializeAuth(app, {
-    persistence:getReactNativePersistence(ReactNativeAsyncStorage)
+    persistence:getReactNativePersistence(AsyncStorage)
 });
 
 // import { initializeApp } from "firebase/app";
-// import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
+// import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 // import { getFirestore, Timestamp } from "firebase/firestore";
+// import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 // const firebaseConfig = {
 //   apiKey: "AIzaSyCRI4-1kYFoqiUjEYT4AOnUSG9amMS4nLE",
@@ -78,10 +48,30 @@ export const auth = initializeAuth(app, {
 // export const db = getFirestore(app);
 // export { Timestamp };
 
-// // Initialize Firebase Auth (without getReactNativePersistence)
-// export const auth = getAuth(app);
+// export const auth = initializeAuth(app, {
+//        persistence:getReactNativePersistence(ReactNativeAsyncStorage)
+//   });
 
-// // Set authentication persistence manually
-// setPersistence(auth, browserLocalPersistence).catch((error) => {
-//   console.error("Error setting persistence:", error);
+// import { initializeApp } from "firebase/app";
+// import { initializeAuth } from 'firebase/auth';
+// import { getFirestore, Timestamp } from "firebase/firestore";
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { getReactNativePersistence } from 'firebase/auth';
+
+// const firebaseConfig = {
+//   apiKey: "AIzaSyCRI4-1kYFoqiUjEYT4AOnUSG9amMS4nLE",
+//   authDomain: "hormoniq-8420b.firebaseapp.com",
+//   projectId: "hormoniq-8420b",
+//   storageBucket: "hormoniq-8420b.firebasestorage.app",
+//   messagingSenderId: "333974410288",
+//   appId: "1:333974410288:web:a13bc2ac347ef7a68fc9f5",
+// };
+
+// // Initialize Firebase
+// export const app = initializeApp(firebaseConfig);
+// export const db = getFirestore(app);
+// export { Timestamp };
+
+// export const auth = initializeAuth(app, {
+//   persistence: getReactNativePersistence(AsyncStorage)
 // });
