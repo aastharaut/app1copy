@@ -138,17 +138,7 @@
 //         </View>
 //       </View>
       
-//       {/* Quick actions */}
-//       <View style={styles.actionsContainer}>
-//         {['Period', 'Symptoms', 'Mood', 'Notes'].map(category => (
-//           <TouchableOpacity 
-//             key={category}
-//             style={styles.actionButton}
-//           >
-//             <Text style={styles.actionText}>{category}</Text>
-//           </TouchableOpacity>
-//         ))}
-//       </View>
+//    
       
 //       {/* Today's summary */}
 //       <View style={styles.summaryContainer}>

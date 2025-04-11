@@ -159,13 +159,6 @@ const SymptomTrackerScreen = () => {
     }
   };
   
-  // const handleSymptomSelect = (categoryIndex: number, optionIndex: number): void => {
-  //   const updatedSymptoms = [...symptoms];
-  //   updatedSymptoms[categoryIndex].selected = 
-  //     updatedSymptoms[categoryIndex].selected === optionIndex ? null : optionIndex;
-  //   setSymptoms(updatedSymptoms);
-  // };
-
   // Save symptoms !!!!!!
   const handleSave = (): void => {
     // In a real app, this would save the symptoms to storage/API

@@ -1,4 +1,4 @@
-// src/api/dailyLogs.ts
+///api/dailyLogs.tsx
 import { doc, setDoc, collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 
@@ -15,7 +15,6 @@ export interface DailyLog {
   energy: string[];
   skin: string[];
   exercise: string[];
-  notes?: string;
   updatedAt: Timestamp;
 }
 
@@ -35,7 +34,6 @@ export const addDailyLog = async (userId: string, date: Date, logData: DailyLog)
       energy: logData.energy || [],
       skin: logData.skin || [],
       exercise: logData.exercise || [],
-      notes: logData.notes || '',
       updatedAt: Timestamp.now(),
     }, { merge: true });
 

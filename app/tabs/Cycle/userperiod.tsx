@@ -1352,12 +1352,28 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { doc, setDoc, serverTimestamp, addDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, addDoc, collection, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../../../FirebaseConfig'; // Import from your config file
 
 export default function UserPeriodScreen() {
   const router = useRouter();
 
+interface UserCycleData {
+  userId: string;
+  lastPeriodDate1: Timestamp | Date;
+  lastPeriodDate2: Timestamp | Date;
+  periodLength: number;
+  cycleLength: number;
+  currentCycleDay?: number;
+  currentPhase?: string;
+  predictedNextPeriodDate?: Timestamp | Date;
+  predictedOvulationDate?: Timestamp | Date;
+  trackedDays?: number[];
+  streak?: number;
+  isProfileComplete?: boolean;
+  createdAt?: Timestamp | Date;
+  lastUpdated?: Timestamp | Date;
+}
   // Form state
   const [lastPeriodDate1, setLastPeriodDate1] = useState(new Date());
   const [lastPeriodDate2, setLastPeriodDate2] = useState(new Date());
@@ -1394,55 +1410,77 @@ export default function UserPeriodScreen() {
       Alert.alert("Invalid Input", "Please enter a valid period length.");
       return;
     }
-
+  
     const periodLengthNum = Number(periodLength);
     if (periodLengthNum <= 0 || periodLengthNum > 15) {
       Alert.alert("Invalid Input", "Period length should be between 1 and 15 days.");
       return;
     }
-
+  
+    // Validate period dates
+    if (!lastPeriodDate1 || !lastPeriodDate2) {
+      Alert.alert("Missing Dates", "Please select both period dates");
+      return;
+    }
+  
     try {
       const user = auth.currentUser;
       if (!user) throw new Error("User not authenticated");
-
-      console.log("Submitting cycle data for user:", user.uid);
-
-      // SOLUTION 1: Store data in both locations for compatibility
-      // 1. Create document in cycles collection with userId field
-      const cycleData = {
-        userId: user.uid,
-        lastPeriodDate1, 
-        lastPeriodDate2, 
-        periodLength: periodLengthNum,
-        cycleLength,
-        createdAt: serverTimestamp(),
-        lastUpdated: serverTimestamp(),
-        isProfileComplete: true
-      };
-      
-      // Add to cycles collection with auto-generated ID
-      await addDoc(collection(db, "cycles"), cycleData);
-      
-      // 2. Also store in the user document for backwards compatibility
-      const userRef = doc(db, "users", user.uid);
-      await setDoc(userRef, {
-        lastPeriodDate1,
-        lastPeriodDate2,
-        periodLength: periodLengthNum,
-        cycleLength,
-        lastUpdated: serverTimestamp()
-      }, { merge: true }); // Use merge to not overwrite other user data
   
-      console.log("Data saved successfully");
-      
-      // Navigate to the cycle view screen
+      // Calculate cycle length (days between last two periods)
+      const cycleLengthDays = Math.round(
+        (lastPeriodDate1.getTime() - lastPeriodDate2.getTime()) / (1000 * 60 * 60 * 24)
+      );
+  
+      // Validate cycle length (typical range: 21-35 days)
+      if (cycleLengthDays < 15 || cycleLengthDays > 45) {
+        Alert.alert("Unusual Cycle", "Your cycle length seems unusual. Please verify your dates.");
+        return;
+      }
+  
+      // COMPLETE CYCLE DATA STRUCTURE
+      const cycleData: UserCycleData = {
+        userId: user.uid,
+        lastPeriodDate1: Timestamp.fromDate(lastPeriodDate1),
+        lastPeriodDate2: Timestamp.fromDate(lastPeriodDate2),
+        periodLength: periodLengthNum,
+        cycleLength: cycleLengthDays,
+        currentCycleDay: 1, // Start new cycle at day 1
+        currentPhase: "Menstrual Phase",
+        predictedNextPeriodDate: calculateNextPeriodDate(lastPeriodDate1, cycleLengthDays),
+        predictedOvulationDate: calculateOvulationDate(lastPeriodDate1, cycleLengthDays),
+        trackedDays: [1], // Initialize with day 1 tracked
+        streak: 1, // Initialize streak
+        isProfileComplete: true,
+        createdAt: Timestamp.now(),
+        lastUpdated: Timestamp.now()
+      };
+  
+      // SINGLE SOURCE OF TRUTH - cycles collection
+      const cycleRef = doc(db, "cycles", user.uid); // Use UID as document ID
+      await setDoc(cycleRef, cycleData);
+  
+      console.log("Cycle initialized successfully");
       router.replace("/tabs/Cycle");
+  
     } catch (err) {
-      console.error("Firebase update error:", err);
+      console.error("Error saving cycle data:", err);
       Alert.alert("Error", "Failed to save data.");
     }
   };
-
+  
+  // Helper functions (define outside component)
+  const calculateNextPeriodDate = (lastDate: Date, cycleLength: number) => {
+    const nextDate = new Date(lastDate);
+    nextDate.setDate(nextDate.getDate() + cycleLength);
+    return Timestamp.fromDate(nextDate);
+  };
+  
+  const calculateOvulationDate = (lastDate: Date, cycleLength: number) => {
+    const ovulationDate = new Date(lastDate);
+    ovulationDate.setDate(ovulationDate.getDate() + cycleLength - 14); // Luteal phase
+    return Timestamp.fromDate(ovulationDate);
+  };
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
