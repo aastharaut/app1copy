@@ -1528,14 +1528,14 @@ interface UserCycleData {
             }}
           />
         )}
-
+        
         <Text style={styles.label}>Period Length (in days)</Text>
         <View style={styles.inputContainer}>
-          <Ionicons name="calendar-outline" size={20} color="#fff" style={styles.icon} />
+          <Ionicons name="water-outline" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
             placeholder="e.g. 5"
-            placeholderTextColor="#CCC"
+            placeholderTextColor="#ccc"
             keyboardType="number-pad"
             value={periodLength}
             onChangeText={setPeriodLength}
@@ -1552,56 +1552,58 @@ interface UserCycleData {
         </View>
 
         <TouchableOpacity
-          style={styles.submitButton}
-          onPress={handleSubmit}
-        >
-          <Text style={styles.submitText}>Continue</Text>
+          style={styles.submitButton} onPress={handleSubmit}>
+          <Text style={styles.submitButtonText}>Continue</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: "#1E1B2E",
+    paddingHorizontal: 20,
+    paddingTop: 50,
   },
   scrollContainer: {
-    padding: 20,
+    paddingBottom: 50,
   },
   header: {
-    fontSize: 28,
+    fontSize: 24,
+    color: "#FFFFFF",
     fontWeight: "bold",
-    color: "#fff",
     marginBottom: 30,
     textAlign: "center",
   },
   label: {
+    color: "#D1C4E9",
     fontSize: 16,
-    color: "#fff",
     marginBottom: 8,
+    marginTop: 16,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#333",
+    backgroundColor: "#4B0082", // Dark indigo
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    marginBottom: 20,
-  },
-  icon: {
-    marginRight: 10,
+    marginBottom: 10,
   },
   input: {
-    flex: 1,
     color: "#fff",
     fontSize: 16,
+    flex: 1,
+    marginLeft: 10,
   },
   inputText: {
     color: "#fff",
     fontSize: 16,
+    marginLeft: 10,
+  },
+  icon: {
+    color: "#fff",
   },
   cycleInfoContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -1620,15 +1622,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   submitButton: {
-    backgroundColor: "#FF6B6B",
-    paddingVertical: 15,
-    borderRadius: 10,
+    backgroundColor: "#8A2BE2", // Lighter purple
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 30,
     alignItems: "center",
-    marginTop: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
-  submitText: {
+  submitButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
-  },
+  }
 });

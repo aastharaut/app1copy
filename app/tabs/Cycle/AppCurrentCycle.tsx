@@ -1475,6 +1475,7 @@ interface CycleTrackerProps {
   userId: string;
 }
 import { useRouter } from 'expo-router';
+//import { predictCycle } from '../../../api/api';
 
 interface UserCycleData {
   userId: string;
@@ -1540,7 +1541,38 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
       pulseAnimation.stop();
     };
   }, [pulseAnim]);
-
+  // const callPredictionAPI = async (ovulationDay: number, mensesLength: number) => {
+  //   try {
+  //     const response = await fetch('https://abc123.ngrok.io/predict', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         ovulation_day: ovulationDay,
+  //         menses_length: mensesLength,
+  //       }),
+  //     });
+  
+  //     const data = await response.json();
+  //     if (data.status === 'success') {
+  //       console.log('Prediction:', data.prediction);
+  //       // You can update state here with prediction if needed
+  //       // setPredictedCycleLength(data.prediction)
+  //     } else {
+  //       console.error('Prediction failed:', data);
+  //     }
+  //   } catch (err) {
+  //     console.error('Error calling prediction API:', err);
+  //   }
+  // };
+  // useEffect(() => {
+  //   if (ovulationDate && periodLength) {
+  //     const ovulationDay = (ovulationDate.getTime() - (userData?.lastPeriodDate1 as Date).getTime()) / (1000 * 3600 * 24);
+  //     callPredictionAPI(Math.round(ovulationDay), periodLength);
+  //   }
+  // }, [ovulationDate, periodLength]);
+    
   // Calculate next period date based on the most recent period and cycle length
   const calculateNextPeriodDate = (userData: UserCycleData): Date => {
     // Determine most recent period date
@@ -1572,44 +1604,6 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     ovulation.setDate(ovulation.getDate() - 14); // Standard luteal phase is ~14 days
     return ovulation;
   };
-
-  // // Calculate current cycle day and phase
-  // const calculateCurrentCycleInfo = (userData: UserCycleData) => {
-  //   const today = new Date();
-  //   let mostRecentDate;
-    
-  //   // Convert Firestore Timestamp to Date if needed
-  //   if (userData.lastPeriodDate1 instanceof Timestamp) {
-  //     mostRecentDate = userData.lastPeriodDate1.toDate();
-  //   } else {
-  //     mostRecentDate = new Date(userData.lastPeriodDate1);
-  //   }
-    
-  //   // Calculate current cycle day
-  //   const diffTime = Math.abs(today.getTime() - mostRecentDate.getTime());
-  //   let cycleDayCalculated = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 because day 1 is first day of period
-    
-  //   // Adjust if we're beyond the expected cycle length
-  //   if (cycleDayCalculated > userData.cycleLength) {
-  //     cycleDayCalculated = cycleDayCalculated % userData.cycleLength;
-  //     if (cycleDayCalculated === 0) cycleDayCalculated = userData.cycleLength;
-  //   }
-    
-  //   // Determine the current phase
-  //   let phase = "";
-    
-  //   if (cycleDayCalculated <= userData.periodLength) {
-  //     phase = "Menstrual Phase";
-  //   } else if (cycleDayCalculated <= userData.cycleLength - 14) {
-  //     phase = "Follicular Phase";
-  //   } else if (cycleDayCalculated <= userData.cycleLength - 10) {
-  //     phase = "Ovulatory Phase";
-  //   } else {
-  //     phase = "Luteal Phase";
-  //   }
-    
-  //   return { currentCycleDay: cycleDayCalculated, currentPhase: phase };
-  // };
 
   const calculateCurrentCycleInfo = (userData: UserCycleData) => {
     const today = new Date();
@@ -1686,7 +1680,6 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
 
       const db = getFirestore();
       
-      // SOLUTION: Try multiple data locations
       
       // First attempt: Look in cycles collection where userId field matches
       const cyclesRef = collection(db, "cycles");
@@ -1791,43 +1784,9 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
 
   // Handle navigation to symptom tracker
   const navigateToSymptomTracker = () => {
-    router.push("/tabs/Help");
+    router.push("/tabs/Cycle/SymtompTrackerScreen");
   };
-  // const logPeriod = async () => {
-  //   if (!userId || !cycleDocId) {
-  //     Alert.alert('Error', 'User data not loaded');
-  //     return;
-  //   }
-  
-  //   try {
-  //     const today = new Date();
-  //     today.setHours(0, 0, 0, 0);
-  
-  //     const db = getFirestore();
-  //     const cycleRef = doc(db, "cycles", cycleDocId);
-  
-  //     // Get current data first
-  //     const currentData = (await getDoc(cycleRef)).data() as UserCycleData;
-  
-  //     await updateDoc(cycleRef, {
-  //       lastPeriodDate2: currentData.lastPeriodDate1 || Timestamp.fromDate(today),
-  //       lastPeriodDate1: Timestamp.fromDate(today),
-  //       currentCycleDay: 1,
-  //       currentPhase: "Menstrual Phase",
-  //       lastUpdated: Timestamp.now(),
-  //       // Add today to tracked days if not already there
-  //       trackedDays: [...new Set([...(currentData.trackedDays || []), 1])],
-  //     });
-  
-  //     // Refresh the data
-  //     await fetchUserData();
-  //     Alert.alert('Success', 'New period logged! Cycle reset to day 1.');
-  
-  //   } catch (error) {
-  //     console.error('Error logging period:', error);
-  //     Alert.alert('Error', 'Failed to log period');
-  //   }
-  // };
+
   const logPeriod = async () => {
     if (!userId || !cycleDocId) {
       Alert.alert('Error', 'User data not loaded');
@@ -1850,13 +1809,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
         lastUpdated: Timestamp.now(),
         trackedDays: [...new Set([...(currentData.trackedDays || []), 1])],
       });
-  // // Also mark today's symptoms as Period (if logged)
-  // const dailyLogRef = doc(db, 'daily_logs', `${userId}_${selectedDateString}`);
-  // await updateDoc(dailyLogRef, {
-  //   hasPeriod: true,
-  //   "symptoms": arrayUnion({ category: "Period", selected: 0 }), // Default to "Light"
-  // });
-      // Update UI immediately before fetch
+ 
       setCurrentDay(1);
       setCurrentPhase("Menstrual Phase");
       await fetchUserData(); // Sync with Firestore
