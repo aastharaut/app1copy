@@ -390,7 +390,6 @@ import {
 import { getFirestore, collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { auth } from '../../FirebaseConfig';
 import { useRouter } from 'expo-router';
-import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
 
 // Type definitions
@@ -448,11 +447,7 @@ const AnalysisScreen = () => {
   const [periodVariability, setPeriodVariability] = useState<number>(0);
   const [cycleData, setCycleData] = useState<CycleData | null>(null);
   
-  // Chart data
-  const [cycleLengthData, setCycleLengthData] = useState({
-    labels: [''],
-    datasets: [{ data: [0] }]
-  });
+
 
   useEffect(() => {
     if (auth.currentUser) {
@@ -599,21 +594,7 @@ const AnalysisScreen = () => {
       console.log(calculatedAvgCycleLength)
       
       setNextPeriods(nextPredictions);
-      
-      // 5. Prepare chart data
-      if (periods.length > 1) {
-        // For the line chart - cycle lengths
-        const recentCycles = periods
-          .filter(p => p.cycleLength)
-          .slice(0, 6)
-          .reverse();
-        
-        setCycleLengthData({
-          labels: recentCycles.map(p => p.date.toLocaleDateString('en-US', { month: 'short' })),
-          datasets: [{ data: recentCycles.map(p => p.cycleLength || 0) }]
-        });
-      }
-      
+  
       // 6. Fetch most common symptoms
       const allLogsQuery = query(
         logsRef,
@@ -740,37 +721,7 @@ const AnalysisScreen = () => {
           </View>
         </View>
       </View>
-      
-      {/* Cycle Length Chart */}
-      {cycleLengthData.labels.length > 1 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Cycle Lengths</Text>
-          <LineChart
-            data={cycleLengthData}
-            width={screenWidth - 40}
-            height={220}
-            chartConfig={{
-              backgroundColor: "#ffffff",
-              backgroundGradientFrom: "#ffffff",
-              backgroundGradientTo: "#ffffff",
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(108, 99, 255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: "6",
-                strokeWidth: "2",
-                stroke: "#6C63FF"
-              }
-            }}
-            bezier
-            style={styles.chart}
-          />
-        </View>
-      )}
-      
+
       {/* Next Period Predictions */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Upcoming Periods</Text>
@@ -821,7 +772,7 @@ const AnalysisScreen = () => {
             </View>
           ))
         ) : (
-          <Text style={styles.emptyText}>No period history found</Text>
+          <Text style={styles.emptyText}>No period history found with us</Text>
         )}
       </View>
       

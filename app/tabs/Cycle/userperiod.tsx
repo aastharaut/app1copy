@@ -1551,8 +1551,7 @@ interface UserCycleData {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.submitButton} onPress={handleSubmit}>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Continue</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -1562,40 +1561,32 @@ interface UserCycleData {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1E1B2E",
-    paddingHorizontal: 20,
-    paddingTop: 50,
+    backgroundColor: "#4B0082",
   },
   scrollContainer: {
-    paddingBottom: 50,
+    padding: 20,
+    justifyContent: "center",
   },
   header: {
-    fontSize: 24,
-    color: "#FFFFFF",
+    fontSize: 28,
     fontWeight: "bold",
+    color: "#fff",
     marginBottom: 30,
     textAlign: "center",
   },
   label: {
-    color: "#D1C4E9",
     fontSize: 16,
+    color: "#fff",
     marginBottom: 8,
     marginTop: 16,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#4B0082", // Dark indigo
+    backgroundColor: "#6E29B5",
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    padding: 12,
     marginBottom: 10,
-  },
-  input: {
-    color: "#fff",
-    fontSize: 16,
-    flex: 1,
-    marginLeft: 10,
   },
   inputText: {
     color: "#fff",
@@ -1604,6 +1595,11 @@ const styles = StyleSheet.create({
   },
   icon: {
     color: "#fff",
+  }, input: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 16,
+    marginLeft: 10,
   },
   cycleInfoContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -1622,20 +1618,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   submitButton: {
-    backgroundColor: "#8A2BE2", // Lighter purple
+    backgroundColor: "#8A2BE2",
     paddingVertical: 14,
     borderRadius: 12,
     marginTop: 30,
-    alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
     elevation: 5,
   },
   submitButtonText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "bold",
-  }
+    textAlign: "center",
+    fontWeight: "600",
+  },
 });

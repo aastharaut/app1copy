@@ -1468,14 +1468,14 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
-import { Flame } from 'lucide-react-native';
+import { Flame, Settings } from 'lucide-react-native';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 interface CycleTrackerProps {
   userId: string;
 }
 import { useRouter } from 'expo-router';
-//import { predictCycle } from '../../../api/api';
 
 interface UserCycleData {
   userId: string;
@@ -1493,7 +1493,12 @@ interface UserCycleData {
   createdAt?: Timestamp | Date;
   lastUpdated?: Timestamp | Date;
 }
-
+interface PhaseInfo {
+  description: string;
+  phase: 'menstruation' | 'ovulation' | 'fertile' | 'follicular' | 'luteal';
+  icon: string;
+  tips: string;
+}
 const screenWidth = Dimensions.get('window').width;
 const circleSize = screenWidth * 0.8;
 const circleRadius = circleSize / 2;
@@ -1541,37 +1546,6 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
       pulseAnimation.stop();
     };
   }, [pulseAnim]);
-  // const callPredictionAPI = async (ovulationDay: number, mensesLength: number) => {
-  //   try {
-  //     const response = await fetch('https://abc123.ngrok.io/predict', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         ovulation_day: ovulationDay,
-  //         menses_length: mensesLength,
-  //       }),
-  //     });
-  
-  //     const data = await response.json();
-  //     if (data.status === 'success') {
-  //       console.log('Prediction:', data.prediction);
-  //       // You can update state here with prediction if needed
-  //       // setPredictedCycleLength(data.prediction)
-  //     } else {
-  //       console.error('Prediction failed:', data);
-  //     }
-  //   } catch (err) {
-  //     console.error('Error calling prediction API:', err);
-  //   }
-  // };
-  // useEffect(() => {
-  //   if (ovulationDate && periodLength) {
-  //     const ovulationDay = (ovulationDate.getTime() - (userData?.lastPeriodDate1 as Date).getTime()) / (1000 * 3600 * 24);
-  //     callPredictionAPI(Math.round(ovulationDay), periodLength);
-  //   }
-  // }, [ovulationDate, periodLength]);
     
   // Calculate next period date based on the most recent period and cycle length
   const calculateNextPeriodDate = (userData: UserCycleData): Date => {
@@ -1878,11 +1852,11 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
               left: x,
               top: y,
               backgroundColor: isPeriod
-                ? '#8B5CF6' // Purple for period
+                ? '#FF6B6B' // Purple for period
                 : isOvulation
-                ? '#F472B6' // Pink for ovulation
+                ? '#4A90E2' // Pink for ovulation
                 : isFertile
-                ? '#A78BFA' // Light purple for fertile
+                ? '#7ED321' // Light purple for fertile
                 : '#CBD5E1', // Gray for other days
               zIndex: isCurrentDay ? 1 : 0,
               // Add a border for tracked days
@@ -1907,384 +1881,380 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  
+  const phaseInfo: PhaseInfo = ((): PhaseInfo => {  // Explicit return type
+    const ovulationDay = cycleLength - 14;
+    const ovulationDays = [ovulationDay - 1, ovulationDay, ovulationDay + 1];
+    const fertileDays = Array.from({ length: 7 }, (_, i) => ovulationDay - 3 + i);
+  
+    if (currentDay <= periodLength) {
+      return {
+        description: "You are in your menstrual phase.This is when your uterine lining sheds.",
+        phase: 'menstruation' as const,  // Use 'as const' to lock the type
+        icon: '🩸',
+        tips: "Rest and hydrate."
+      };
+    } else if (ovulationDays.includes(currentDay)) {
+      return {
+        description: "You're likely ovulating today. This is when an egg is released from your ovary.",
+        phase: 'ovulation' as const,
+        icon: '🥚',
+        tips: "This is your most fertile time if trying to conceive."
+      };
+    } else if (fertileDays.includes(currentDay)) {
+      return {
+        description: "You're in your fertile window. Chances of pregnancy are higher during these days.",
+        phase: 'fertile' as const,
+        icon: '📈',
+        tips: "Have regular intercourse if trying to conceive."
+      };
+    } else if (currentDay < fertileDays[0]) {
+      return {
+        description: "You're in your follicular phase. Your body is preparing an egg for release.",
+        phase: 'follicular' as const,
+        icon: '🌱',
+        tips: "Energy levels are typically higher now."
+      };
+    } else {
+      return {
+        description: "You're in your luteal phase. Your body is preparing for a potential period.",
+        phase: 'luteal' as const,
+        icon: '🌙',
+        tips: "Watch for PMS symptoms in the coming days."
+      };
+    }
+  })();
+  
+  
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>
-        Day {currentDay} of {cycleLength}
-      </Text>
-      
-      <Text style={styles.phaseText}>
-        {currentPhase}
-      </Text>
-
-      <View style={styles.cycleInfoCards}>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Next Period</Text>
-          <Text style={styles.infoValue}>{formatDate(nextPeriod)}</Text>
+      <SafeAreaView style={styles.safeArea}>
+        {/* New Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Your Current Cycle</Text>
+          <TouchableOpacity 
+            style={styles.settingsButton}
+            onPress={() => router.push("/")} // Or your settings route
+          >
+            <Settings size={24} color="#333" />
+          </TouchableOpacity>
         </View>
+  
+        <ScrollView contentContainerStyle={styles.container}>
+          {/* Removed the title and phase text from here */}
+          
+          {/* Streak display - moved below header */}
+          {streak > 0 && (
+            <View style={styles.streakContainer}>
+              <Flame color={streak > 3 ? 'orange' : 'gray'} size={24} />
+              <Text style={styles.streakHeading}>
+                {streak} day{streak !== 1 ? 's' : ''} streak
+              </Text>
+            </View>
+          )}
+  
+          <View style={styles.circleContainer}>
+            {/* Cycle day and phase inside the circle */}
+            <View style={styles.cycleInfoCenter}>
+              <Text style={styles.cycleDayText}>Day {currentDay} of {cycleLength} </Text>
+              <Text style={styles.cyclePhaseText}>{currentPhase}</Text> 
+            </View>
+            {renderDayMarkers()}
+          </View>
+  
+          {/* Rest of your existing UI remains the same */}
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#8B5CF6' }]} />
+              <Text style={styles.legendText}>Period</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#F472B6' }]} />
+              <Text style={styles.legendText}>Ovulation</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
+              <Text style={styles.legendText}>Fertile</Text>
+            </View>
+          </View>
+
+          {/* Phase Description */}
+<View style={styles.phaseDescriptionContainer}>
+  <View style={styles.phaseHeader}>
+    <Text style={styles.phaseIcon}>{phaseInfo.icon}</Text>
+    <Text style={styles.phaseDescriptionTitle}>Today's Phase</Text>
+  </View>
+  <Text style={[
+    styles.phaseDescriptionText,
+    styles[`${phaseInfo.phase}Phase` as keyof typeof styles]
+  ]}>
+    {phaseInfo.description}
+  </Text>
+  <Text style={styles.phaseTips}>{phaseInfo.tips}</Text>
+</View>
         
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Ovulation</Text>
-          <Text style={styles.infoValue}>{formatDate(ovulationDate)}</Text>
-        </View>
-      </View>
-      
-      {/* Streak display component moved above the cycle */}
-      {streak > 0 && (
-        <View style={styles.streakContainer}>
-          <Flame color={streak > 3 ? 'orange' : 'gray'} size={24} />
-          <Text style={styles.streakHeading}>
-            {streak} day{streak !== 1 ? 's' : ''} streak
-          </Text>
-        </View>
-      )}
+          <TouchableOpacity 
+            style={[styles.button, { backgroundColor: '#FF3B30' }]} 
+            onPress={logPeriod}>
+            <Text style={styles.buttonText}>Log Period Start</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={navigateToSymptomTracker}>
+              <Text style={styles.buttonText}>Log Your Symptoms</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  };
+  
+  const styles = StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: '#FFF',
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      //borderBottomWidth: 1,
+      borderBottomColor: '#E5E7EB',
+    },
+    headerTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      flex: 1, // this will help center the text in the row
+    },
+    settingsButton: {
+      padding: 8,
+      position: 'absolute',
+    right: 16,
+    top: '50%',
+    transform: [{ translateY: -12 }], // vertical alignment adjustment
+    },
+    cycleInfoCenter: {
+      position: 'absolute',
+      zIndex: 2,
+      alignItems: 'center',
+    },
+    cycleDayText: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 4,
+    },
+    cyclePhaseText: {
+      fontSize: 16,
+      color: '#6C63FF',
+      textAlign: 'center',
+      maxWidth: circleSize * 0.6,
+    },
+    // ... keep all your existing styles below ...
+    container: {
+      flexGrow: 1,
+      padding: 20,
+      backgroundColor: '#ffffff',
+    },
+    centeredContainer: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+      backgroundColor: '#FFFBEB',
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: '#333',
+      textAlign: 'center',
+      marginBottom: 5,
+    },
+    phaseText: {
+      fontSize: 18,
+      color: '#FF6B6B',
+      textAlign: 'center',
+      marginBottom: 10,
+    },
+    cycleInfoCards: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+    },
+    infoCard: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+      borderRadius: 10,
+      padding: 12,
+      margin: 5,
+      alignItems: 'center',
+    },
+    infoLabel: {
+      color: '#666',
+      fontSize: 14,
+      marginBottom: 4,
+    },
+    infoValue: {
+      color: '#333',
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    streakContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 10,
+      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+      borderRadius: 10,
+      marginBottom: 15,
+    },
+    streakHeading: {
+      color: '#333',
+      fontWeight: 'bold',
+      fontSize: 16,
+      marginLeft: 8,
+    },
+    circleContainer: {
+      width: circleSize,
+      height: circleSize,
+      borderRadius: circleSize / 2,
+      alignSelf: 'center',
+      position: 'relative',
+      marginBottom: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    dayMarker: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    currentDayRing: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      borderWidth: 2,
+      borderColor: '#333',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    },
+    currentDayText: {
+      color: '#333',
+      fontWeight: 'bold',
+      fontSize: 12,
+    },
+    buttonContainer: {
+      marginTop: 20,
+      gap: 10,
+    },
+    button: {
+      backgroundColor: '#FF6B6B',
+      padding: 15,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+    },
+    buttonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    loadingText: {
+      color: '#333',
+      marginTop: 10,
+    },
+    errorText: {
+      color: '#FF6B6B',
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    noCycleText: {
+      color: '#333',
+      fontSize: 18,
+      marginBottom: 10,
+    },
+    legendContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginBottom: 20,
+      flexWrap: 'wrap',
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 10,
+      marginVertical: 5,
+    },
+    legendDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginRight: 5,
+    },
+    legendText: {
+      color: '#333',
+      fontSize: 12,
+    },
+      // ... your existing styles ...
 
-      <View style={styles.circleContainer}>{renderDayMarkers()}</View>
-
-      <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#8B5CF6' }]} />
-          <Text style={styles.legendText}>Period</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#F472B6' }]} />
-          <Text style={styles.legendText}>Ovulation</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
-          <Text style={styles.legendText}>Fertile</Text>
-        </View>
-      </View>
-    
-      <TouchableOpacity 
-  style={[styles.button, { backgroundColor: '#FF3B30' }]} 
-  onPress={logPeriod}>
-  <Text style={styles.buttonText}>Log Period Start</Text>
-</TouchableOpacity>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={navigateToSymptomTracker}>
-          <Text style={styles.buttonText}>Log Your Symptoms</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  );
-};
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flexGrow: 1,
-//     padding: 20,
-//     backgroundColor: '#121212',
-//   },
-//   centeredContainer: {
-//     flexGrow: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     padding: 20,
-//     backgroundColor: '#121212',
-//   },
-//   title: {
-//     fontSize: 22,
-//     fontWeight: 'bold',
-//     color: '#fff',
-//     textAlign: 'center',
-//     marginBottom: 5,
-//   },
-//   phaseText: {
-//     fontSize: 18,
-//     color: '#FF6B6B',
-//     textAlign: 'center',
-//     marginBottom: 10,
-//   },
-//   cycleInfoCards: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     marginBottom: 20,
-//   },
-//   infoCard: {
-//     flex: 1,
-//     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-//     borderRadius: 10,
-//     padding: 12,
-//     margin: 5,
-//     alignItems: 'center',
-//   },
-//   infoLabel: {
-//     color: '#ccc',
-//     fontSize: 14,
-//     marginBottom: 4,
-//   },
-//   infoValue: {
-//     color: '#fff',
-//     fontSize: 16,
-//     fontWeight: 'bold',
-//   },
-//   streakContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     padding: 10,
-//     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-//     borderRadius: 10,
-//     marginBottom: 15,
-//   },
-//   streakHeading: {
-//     color: '#fff',
-//     fontWeight: 'bold',
-//     fontSize: 16,
-//     marginLeft: 8,
-//   },
-//   circleContainer: {
-//     width: circleSize,
-//     height: circleSize,
-//     borderRadius: circleSize / 2,
-//     borderWidth: 1,
-//     borderColor: '#333',
-//     alignSelf: 'center',
-//     position: 'relative',
-//     marginBottom: 20,
-//   },
-//   dayMarker: {
-//     width: 20,
-//     height: 20,
-//     borderRadius: 10,
-//     position: 'absolute',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   currentDayRing: {
-//     width: 30,
-//     height: 30,
-//     borderRadius: 15,
-//     borderWidth: 2,
-//     borderColor: '#fff',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-//   },
-//   currentDayText: {
-//     color: '#fff',
-//     fontWeight: 'bold',
-//     fontSize: 12,
-//   },
-//   buttonContainer: {
-//     marginTop: 20,
-//     gap: 10,
-//   },
-//   button: {
-//     backgroundColor: '#FF6B6B',
-//     padding: 15,
-//     borderRadius: 10,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     flexDirection: 'row',
-//   },
-//   buttonText: {
-//     color: '#fff',
-//     fontWeight: 'bold',
-//     fontSize: 16,
-//   },
-//   loadingText: {
-//     color: '#fff',
-//     marginTop: 10,
-//   },
-//   errorText: {
-//     color: '#FF6B6B',
-//     textAlign: 'center',
-//     marginBottom: 20,
-//   },
-//   noCycleText: {
-//     color: '#fff',
-//     fontSize: 18,
-//     marginBottom: 10,
-//   },
-//   legendContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'center',
-//     marginBottom: 20,
-//     flexWrap: 'wrap',
-//   },
-//   legendItem: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginHorizontal: 10,
-//     marginVertical: 5,
-//   },
-//   legendDot: {
-//     width: 12,
-//     height: 12,
-//     borderRadius: 6,
-//     marginRight: 5,
-//   },
-//   legendText: {
-//     color: '#fff',
-//     fontSize: 12,
-//   },
-// });
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: '#FFFBEB', // Light background color
-  },
-  centeredContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#FFFBEB', // Light background color
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333', // Dark text for contrast
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  phaseText: {
-    fontSize: 18,
-    color: '#FF6B6B', // Red for menstruation phase
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  cycleInfoCards: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  infoCard: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Light, subtle background for the info cards
-    borderRadius: 10,
-    padding: 12,
-    margin: 5,
-    alignItems: 'center',
-  },
-  infoLabel: {
-    color: '#666', // Lighter text for labels
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  infoValue: {
-    color: '#333', // Dark text for values
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  streakContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 10,
+  phaseDescriptionContainer: {
+    backgroundColor: '#F3F0FF',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 15,
     marginBottom: 15,
   },
-  streakHeading: {
-    color: '#333',
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  circleContainer: {
-    width: circleSize,
-    height: circleSize,
-    borderRadius: circleSize / 2,
-    borderWidth: 1,
-    borderColor: '#333',
-    alignSelf: 'center',
-    position: 'relative',
-    marginBottom: 20,
-  },
-  dayMarker: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  currentDayRing: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: '#333',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-  },
-  currentDayText: {
-    color: '#333', // Darker text for contrast
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  buttonContainer: {
-    marginTop: 20,
-    gap: 10,
-  },
-  button: {
-    backgroundColor: '#FF6B6B', // Red for period
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  loadingText: {
-    color: '#333', // Dark text
-    marginTop: 10,
-  },
-  errorText: {
-    color: '#FF6B6B', // Red for errors
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  noCycleText: {
-    color: '#333', // Dark text for clarity
+  phaseDescriptionTitle: {
     fontSize: 18,
-    marginBottom: 10,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
   },
-  legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
-    flexWrap: 'wrap',
+  phaseDescriptionText: {
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: 8,
   },
-  legendItem: {
+  phaseTips: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: '#555',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  phaseIcon: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  phaseHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 10,
-    marginVertical: 5,
+    marginBottom: 8,
   },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 5,
-  },
-  legendText: {
-    color: '#333', // Dark text
-    fontSize: 12,
-  },
-  // Phase-specific colors
   menstruationPhase: {
-    color: '#FF6B6B', // Red for menstruation
+    color: '#FF6B6B',
   },
   ovulationPhase: {
-    color: '#4A90E2', // Blue for ovulation
+    color: '#4A90E2',
+  },
+  fertilePhase: {
+    color: '#7ED321',
   },
   follicularPhase: {
-    color: '#7ED321', // Green for follicular
+    color: '#9B59B6',
   },
   lutealPhase: {
-    color: '#9B59B6', // Purple for luteal
+    color: '#F39C12',
   },
-});
-
+  });
 
 export default AppCurrentCycle;
