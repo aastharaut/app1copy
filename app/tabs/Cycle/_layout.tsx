@@ -8,7 +8,7 @@ export default function CycleLayout() {
         options={{ headerShown: false }}  // Crucial for index route
       />
       <Stack.Screen name="AppCurrentCycle" />
-      <Stack.Screen name="SymtompTrackerScreen" />
+      <Stack.Screen name="SymtompTrackerScreen" options={{ headerShown: false }}/>
       <Stack.Screen name="userperiod" />
     </Stack>
   );

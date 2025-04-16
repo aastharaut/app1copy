@@ -124,7 +124,7 @@ const Profile = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#D32F2F" />
+        <ActivityIndicator size="large" color="#6C63FF" />
       </View>
     );
   }
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F0FF",
   },
   header: {
-    marginBottom: 10,
+    marginBottom: 50,
   },
   profileCard: {
     backgroundColor: "#fff",

@@ -839,21 +839,29 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
+    textAlign: "center",
+    marginVertical: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 50,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    marginBottom: 8,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#6C63FF',
   },
   refreshButton: {
     padding: 8,
+    position: 'absolute',
+    right: 16,
+    //top: '50%',
+    transform: [{ translateY: 0 }],
+
   },
   section: {
     backgroundColor: '#ffffff',

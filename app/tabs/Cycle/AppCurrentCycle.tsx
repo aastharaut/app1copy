@@ -1933,7 +1933,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
           <Text style={styles.headerTitle}>Your Current Cycle</Text>
           <TouchableOpacity 
             style={styles.settingsButton}
-            onPress={() => router.push("/")} // Or your settings route
+            onPress={() => router.push("/authentication/settings")} // Or your settings route
           >
             <Settings size={24} color="#333" />
           </TouchableOpacity>

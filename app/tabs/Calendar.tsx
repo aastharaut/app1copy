@@ -1554,9 +1554,15 @@ if (lastPeriod2) {
   while (isBefore(currentDate, periodEndDate2) || isEqual(currentDate, periodEndDate2)) {
     const dateStr = format(currentDate, "yyyy-MM-dd");
     marked[dateStr] = {
-      dotColor: "#FFC0CB",
-      marked: true,
-      activeOpacity: 0,
+      customStyles: {
+        container: {
+          backgroundColor: "#FFC0CB", // Red for current period
+          borderRadius: 16,
+        },
+        text: {
+          color: "black",
+        },
+      },
     };
     currentDate = addDays(currentDate, 1);
   }
@@ -1674,18 +1680,18 @@ if (lastPeriod2) {
       }
     }
 
-    return (
-      <View style={styles.detailsContainer}>
-        <Text style={styles.detailsTitle}>{format(date, "MMMM do, yyyy")}</Text>
-        {details.length > 0 ? (
-          details.map((detail, index) => (
-            <Text key={index} style={styles.detailText}>• {detail}</Text>
-          ))
-        ) : (
-          <Text style={styles.detailText}>No cycle events this day</Text>
-        )}
-      </View>
-    );
+    // return (
+    //   <View style={styles.detailsContainer}>
+    //     <Text style={styles.detailsTitle}>{format(date, "MMMM do, yyyy")}</Text>
+    //     {details.length > 0 ? (
+    //       details.map((detail, index) => (
+    //         <Text key={index} style={styles.detailText}>• {detail}</Text>
+    //       ))
+    //     ) : (
+    //       <Text style={styles.detailText}>No cycle events this day</Text>
+    //     )}
+    //   </View>
+    // );
   };
 
   if (loading) {
@@ -1805,12 +1811,10 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    // Make sure it sticks to the bottom
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    // Add shadow for better visual separation
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
