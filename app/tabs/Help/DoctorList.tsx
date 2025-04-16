@@ -409,7 +409,7 @@ import {
 } from 'react-native';
 import { getDocs, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../../FirebaseConfig';
-import { NavigationProp, ParamListBase } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import MedicationReminder from './MedicationTracker';
 
 interface Doctor {
@@ -424,10 +424,12 @@ interface Doctor {
   };
 }
 
-const DoctorListScreen = ({ navigation }: { navigation: NavigationProp<ParamListBase> }) => {
+const DoctorListScreen = () => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
 
   const initializeDoctorsIfEmpty = async () => {
     const snapshot = await getDocs(collection(db, 'doctors'));
@@ -517,11 +519,22 @@ const DoctorListScreen = ({ navigation }: { navigation: NavigationProp<ParamList
   useEffect(() => {
     fetchDoctors();
   }, []);
+  const handleDoctorPress = (doctor: Doctor) => {
+    router.push({
+      pathname: '/tabs/Help/Doctorprofile',
+      params: { 
+        doctorId: doctor.id,
+        doctorName: doctor.name,
+        doctorSpecialty: doctor.specialty,
+        doctorImage: doctor.imageUrl
+      }
+    });
+  };
 
   const renderDoctorItem = ({ item }: { item: Doctor }) => (
     <TouchableOpacity
       style={styles.doctorCard}
-      onPress={() => navigation.navigate('Doctorprofile', { doctorId: item.id })}
+      onPress={() => handleDoctorPress(item)}
     >
       <Image
         source={{ uri: item.imageUrl || 'https://via.placeholder.com/100' }}
@@ -556,7 +569,7 @@ const DoctorListScreen = ({ navigation }: { navigation: NavigationProp<ParamList
       <ScrollView style={styles.scrollContainer}>
         <View style={styles.container}>
           <Text style={styles.screenHeader}>Health Companion</Text>
-          
+
           {/* Doctors Section */}
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeaderContainer}>
@@ -571,7 +584,7 @@ const DoctorListScreen = ({ navigation }: { navigation: NavigationProp<ParamList
               showsVerticalScrollIndicator={false}
             />
           </View>
-          
+
           {/* Medication Reminder Section */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionHeader}>Medication Reminder</Text>
