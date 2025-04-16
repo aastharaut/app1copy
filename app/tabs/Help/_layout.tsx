@@ -8,6 +8,7 @@ export default function HelpLayout() {
         options={{ headerShown: true }}  // Crucial for index route
       />
       <Stack.Screen name="Appointmentbooking" />
+      <Stack.Screen name="Doctorprofile" />
       <Stack.Screen name="MedicationTracker" />
     </Stack>
   );
