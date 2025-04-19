@@ -828,13 +828,13 @@ const DoctorProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#F3F0FF', // Soft lavender background
   },
   centeredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#F3F0FF',
   },
   header: {
     alignItems: 'center',
@@ -857,17 +857,17 @@ const styles = StyleSheet.create({
   doctorName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#4B0082', // Primary heading
     marginBottom: 4,
   },
   doctorSpecialty: {
     fontSize: 18,
-    color: '#FF6B6B',
+    color: '#50C878', // Emerald specialty
     marginBottom: 4,
   },
   doctorLocation: {
     fontSize: 16,
-    color: '#888',
+    color: '#4B0082', // Optional: or use a muted indigo/gray tone
   },
   section: {
     backgroundColor: '#FFFFFF',
@@ -883,12 +883,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#4B0082',
     marginBottom: 12,
   },
   bioText: {
     fontSize: 16,
-    color: '#555',
+    color: '#333',
     lineHeight: 24,
   },
   availabilityItem: {
@@ -898,14 +898,14 @@ const styles = StyleSheet.create({
   availabilityDay: {
     fontWeight: 'bold',
     width: 100,
-    color: '#555',
+    color: '#4B0082',
   },
   availabilityTimes: {
     flex: 1,
-    color: '#555',
+    color: '#50C878', // Emerald time text
   },
   bookButton: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#4B0082',
     padding: 16,
     borderRadius: 12,
     margin: 16,
@@ -922,9 +922,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   errorText: {
-    color: 'red',
+    color: '#D32F2F',
     fontSize: 16,
   },
 });
+
 
 export default DoctorProfileScreen;

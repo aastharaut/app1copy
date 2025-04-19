@@ -436,58 +436,73 @@ const DoctorListScreen = () => {
     if (snapshot.empty) {
       const doctorsToAdd = [
         {
-          name: "Dr. Sarah Johnson",
+          name: "Dr. Anita Sharma",
           specialty: "Gynecologist",
-          bio: "Dr. Johnson has been practicing for 15 years...",
-          location: "123 Medical Center, City",
+          bio: "Dr. Sharma has been practicing for 15 years...",
+          location: "Thapathali, Kathmandu",
           imageUrl: "https://randomuser.me/api/portraits/women/44.jpg",
           availability: {
             monday: ["9:00", "10:00", "11:00"],
-            tuesday: ["14:00", "15:00", "16:00"],
+            tuesday: ["2:00", "3:00", "4:00"],
+            wednesday: ["9:00", "10:00", "11:00"],
+            thursday: ["3:00", "4:00"],
+            friday: ["10:00", "11:00", "12:00"],
+
           },
         },
         {
-          name: "Dr. Emily Brown",
+          name: "Dr. Kamala Lama",
           specialty: "OBGYN",
           bio: "Expert in hormonal therapy and menstrual disorders.",
-          location: "456 Women's Clinic, Town",
+          location: "Naxal, Kathmandu",
           imageUrl: "https://randomuser.me/api/portraits/women/68.jpg",
           availability: {
             monday: ["10:00", "11:00", "12:00"],
+            tuesday: ["9:00", "10:00", "11:00"],
             wednesday: ["9:00", "10:00", "11:00"],
+            thursday: ["3:00", "4:00" , "5:00"],
+            friday: ["10:00", "11:00", "12:00"],
+
           },
         },
         {
-          name: "Dr. Amanda Chen",
+          name: "Dr. Aisha Adhikary",
           specialty: "Reproductive Endocrinologist",
           bio: "Specializes in PCOS and fertility treatments.",
-          location: "789 Wellness Avenue, Metro",
+          location: "Budhanilkantha, Kathmandu",
           imageUrl: "https://randomuser.me/api/portraits/women/29.jpg",
           availability: {
+            tuesday: ["9:00", "10:00", "11:00"],
+            wednesday: ["9:00", "10:00", "11:00"],
             thursday: ["1:00", "2:00", "3:00"],
             friday: ["10:00", "11:00", "12:00"],
           },
         },
         {
-          name: "Dr. Priya Patel",
+          name: "Dr. Priya Chaudhary",
           specialty: "Menstrual Health Specialist",
           bio: "Focused on adolescent and adult menstrual care.",
-          location: "321 Care Blvd, District",
+          location: "Patan, Lalitpur",
           imageUrl: "https://randomuser.me/api/portraits/women/10.jpg",
           availability: {
+            wednesday: ["9:00", "10:00", "11:00"],
             tuesday: ["9:00", "10:00", "11:00"],
             friday: ["2:00", "3:00", "4:00"],
           },
         },
         {
-          name: "Dr. Laura Garcia",
+          name: "Dr. Lara Khan",
           specialty: "PCOS Specialist",
           bio: "10+ years experience in managing PCOS symptoms.",
-          location: "654 Hormone St, City",
+          location: "Kaushaltar, Bhaktapur",
           imageUrl: "https://randomuser.me/api/portraits/women/50.jpg",
           availability: {
             monday: ["12:00", "1:00", "12:00"],
+            tuesday: ["9:00", "10:00", "11:00"],
+            wednesday: ["9:00", "10:00", "11:00"],
             thursday: ["3:00", "4:00"],
+            friday: ["10:00", "11:00", "12:00"],
+
           },
         },
       ];

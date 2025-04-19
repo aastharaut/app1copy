@@ -667,9 +667,22 @@ const getAvailableSlots = async (doctorId: string, date: string): Promise<string
     const bookedSlots = bookedAppointments.docs.map(doc => doc.data().timeSlot);
     
     // Filter out booked slots
-    return allSlots.filter(slot => !bookedSlots.includes(slot));
-  } catch (error) {
-    console.error("Error getting available slots:", error);
+    //return allSlots.filter(slot => !bookedSlots.includes(slot));
+     let available = allSlots.filter(slot => !bookedSlots.includes(slot));
+     // If selected date is today, filter out past time slots
+      const today = format(new Date(), 'yyyy-MM-dd');
+      if (date === today) {
+        const now = new Date();
+        available = available.filter(slot => {
+          const [hour, minute] = slot.split(':').map(Number);
+          const slotDate = new Date(date);
+          slotDate.setHours(hour, minute, 0, 0);
+          return slotDate > now;
+        });
+      }
+      return available;
+    } catch (error) {
+      console.error("Error getting available slots:", error);
     throw error;
   }
 };
@@ -1004,6 +1017,7 @@ const BookAppointmentScreen = () => {
           mode="date"
           display="default"
           onChange={handleDateChange}
+          minimumDate={new Date()} //users should not be able to slect past dates for appointment dates
         />
       )}
 
