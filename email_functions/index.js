@@ -7,8 +7,8 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-//const {onRequest} = require("firebase-functions/v2/https");
-//const logger = require("firebase-functions/logger");
+// const {onRequest} = require("firebase-functions/v2/https");
+// const logger = require("firebase-functions/logger");
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
@@ -28,22 +28,20 @@ admin.initializeApp();
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  }
+    user: functions.config().gmail.email,
+    pass: functions.config().gmail.password,
+  },
 });
 
 exports.processEmailQueue = functions.firestore
   .document("emailQueue/{emailId}")
-  .onCreate(async (snapshot, context) => {
-    const emailData = snapshot.data();
+    .onCreate(async (snapshot, context) => {
+      const emailData = snapshot.data();
+      if (emailData.type !== "APPOINTMENT_CONFIRMATION" || emailData.status !== "pending") {
+      return null;}
     
-    if (emailData.type !== "APPOINTMENT_CONFIRMATION" || emailData.status !== "pending") {
-      return null;
-    }
-    
-    try {
-      // Build the email content
+      try {
+          // Build the email content
       const details = emailData.appointmentDetails;
       const mailOptions = {
         from: '"HormonIQ" <hormoniq-8420b.firebaseapp.com>',

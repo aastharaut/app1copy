@@ -5,7 +5,7 @@ export default function HelpLayout() {
     <Stack>
       <Stack.Screen 
         name="DoctorList" 
-        options={{ headerShown: true }}  // Crucial for index route
+        options={{ headerShown: false }}  // Crucial for index route
       />
       <Stack.Screen name="Appointmentbooking" />
       <Stack.Screen name="Doctorprofile" />

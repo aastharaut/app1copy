@@ -890,7 +890,7 @@ const BookAppointmentScreen = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#FF6B6B" />
+        <ActivityIndicator size="large" color="#4B0082" />
       </View>
     );
   }
@@ -930,7 +930,7 @@ const BookAppointmentScreen = () => {
             <Switch
               value={showPrepTool}
               onValueChange={setShowPrepTool}
-              trackColor={{ false: "#D1D1D6", true: "#FF6B6B" }}
+              trackColor={{ false: "#D1D1D6", true: "#4B0082" }}
               thumbColor={showPrepTool ? "#FFFFFF" : "#FFFFFF"}
             />
           </View>
@@ -1067,7 +1067,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 18,
-    color: '#FF6B6B',
+    color: '#4B0082',
   },
   formSection: {
     backgroundColor: '#FFFFFF',
@@ -1143,7 +1143,7 @@ const styles = StyleSheet.create({
     margin: 4,
   },
   symptomButtonSelected: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#4B0082',
   },
   symptomButtonText: {
     color: '#666',
@@ -1167,7 +1167,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timeSlotButtonSelected: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#50C878',
   },
   timeSlotButtonText: {
     color: '#666',
@@ -1183,7 +1183,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   submitButton: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#50C878',
     borderRadius: 12,
     padding: 16,
     margin: 16,

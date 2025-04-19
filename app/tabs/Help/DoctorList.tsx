@@ -497,7 +497,7 @@ const DoctorListScreen = () => {
           location: "Kaushaltar, Bhaktapur",
           imageUrl: "https://randomuser.me/api/portraits/women/50.jpg",
           availability: {
-            monday: ["12:00", "1:00", "12:00"],
+            monday: ["12:00", "1:00", "2:00"],
             tuesday: ["9:00", "10:00", "11:00"],
             wednesday: ["9:00", "10:00", "11:00"],
             thursday: ["3:00", "4:00"],
@@ -566,7 +566,7 @@ const DoctorListScreen = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#6C63FF" />
+        <ActivityIndicator size="large" color="#4B0082" />
       </View>
     );
   }
@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
   screenHeader: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#4B3F72',
+    color: '#4B0082',
     marginBottom: 20,
     marginTop: 10,
   },
@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
   },
   doctorSpecialty: {
     fontSize: 14,
-    color: '#FF6B6B',
+    color: '#50C878',
     marginBottom: 4,
     fontWeight: '500',
   },

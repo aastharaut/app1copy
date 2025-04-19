@@ -1156,7 +1156,7 @@ const MedicationReminderScreen: React.FC = () => {
           <Text style={styles.timeSelectorText}>
             Time: {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </Text>
-          <Ionicons name="time" size={24} color="#2c3e50" />
+          <Ionicons name="time" size={24} color="#4B0082" />
         </TouchableOpacity>
         
         {showTimePicker && (
@@ -1207,7 +1207,7 @@ const MedicationReminderScreen: React.FC = () => {
       {/* Medications List */}
       <Text style={styles.sectionTitle}>Your Medications</Text>
       {loading ? (
-        <ActivityIndicator size="large" color="#2c3e50" />
+        <ActivityIndicator size="large" color="#4B0082" />
       ) : medications.length === 0 ? (
         <Text style={styles.emptyText}>No medications added yet.</Text>
       ) : (
@@ -1227,7 +1227,7 @@ const MedicationReminderScreen: React.FC = () => {
                 style={styles.deleteButton}
                 onPress={() => deleteMedication(medication)}
               >
-                <Ionicons name="trash-outline" size={24} color="#e74c3c" />
+                <Ionicons name="trash-outline" size={24} color="#4B0082" />
               </TouchableOpacity>
             </View>
           ))}
@@ -1320,7 +1320,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   addButton: {
-    backgroundColor: '#4B3F72',
+    backgroundColor: '#4B0082',
     borderRadius: 10,
     height: 50,
     justifyContent: 'center',

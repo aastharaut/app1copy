@@ -759,7 +759,7 @@ const DoctorProfileScreen = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#FF6B6B" />
+        <ActivityIndicator size="large" color="#4B0082" />
       </View>
     );
   }
@@ -788,7 +788,7 @@ const DoctorProfileScreen = () => {
     return Object.entries(doctor.availability).map(([day, times]) => (
       <View key={day} style={styles.availabilityItem}>
         <Text style={styles.availabilityDay}>{day.charAt(0).toUpperCase() + day.slice(1)}:</Text>
-        <Text style={styles.availabilityTimes}>{times.join(', ')}</Text>
+        <Text style={styles.availabilityTimes}>{times.join(' ')}</Text>
       </View>
     ));
   };
