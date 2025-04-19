@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
   },
   sectionHeaderContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
@@ -645,6 +645,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#4B3F72',
+    textAlign: 'center', 
   },
   seeAllText: {
     color: '#6C63FF',

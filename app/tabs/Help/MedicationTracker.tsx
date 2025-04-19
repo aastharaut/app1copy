@@ -877,7 +877,6 @@ import { auth, db } from '../../../FirebaseConfig';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
-import MultiSelect from 'react-native-multiple-select';
 import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, serverTimestamp, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import type { QuerySnapshot } from 'firebase/firestore';
 
@@ -946,7 +945,7 @@ const MedicationReminderScreen: React.FC = () => {
       return;
     }
     
-    // Fix: Use Firebase v9 syntax for collection and onSnapshot
+    //  syntax for collection and onSnapshot
     const medicationsRef = collection(db, 'users', userId, 'medications');
     const unsubscribe = onSnapshot(medicationsRef, (querySnapshot: QuerySnapshot) => {
       const medicationList: Medication[] = [];
@@ -990,7 +989,7 @@ const MedicationReminderScreen: React.FC = () => {
     
     for (const dayId of days) {
       const dayNumber = parseInt(dayId);
-      const weekday = dayNumber % 7; // 0 = Sunday, 1 = Monday, etc.
+      const weekday = dayNumber % 7; // 0 = Sunday, 1 = Monday
       
       const notificationTime = new Date(time);
       
@@ -1019,7 +1018,7 @@ const MedicationReminderScreen: React.FC = () => {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
     
-    // Fix: Use Firebase v9 syntax for updating document
+    // syntax for updating document
     const medicationRef = doc(db, 'users', userId, 'medications', medicationId);
     await updateDoc(medicationRef, {
       notificationIds,
@@ -1059,7 +1058,7 @@ const MedicationReminderScreen: React.FC = () => {
         return;
       }
       
-      // Fix: Use Firebase v9 syntax for creating document
+      // syntax for creating document
       const medicationsCollection = collection(db, 'users', userId, 'medications');
       const newMedicationRef = doc(medicationsCollection);
 
@@ -1104,7 +1103,7 @@ const MedicationReminderScreen: React.FC = () => {
         }
       }
       
-      // Fix: Use Firebase v9 syntax for deleting document
+      // syntax for deleting document
       const medicationRef = doc(db, 'users', userId, 'medications', medication.id);
       await deleteDoc(medicationRef);
         
@@ -1131,7 +1130,7 @@ const MedicationReminderScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Medication Reminders</Text>
+      
       
       {/* Add Medication Form */}
       <View style={styles.formContainer}>
@@ -1170,28 +1169,30 @@ const MedicationReminderScreen: React.FC = () => {
         )}
         
         {/* Days Selector */}
-        <View style={styles.daysContainer}>
-          <Text style={styles.sectionLabel}>Select Days:</Text>
-          <MultiSelect
-            items={days}
-            uniqueKey="id"
-            onSelectedItemsChange={setSelectedDays}
-            selectedItems={selectedDays}
-            selectText="Select Days"
-            searchInputPlaceholderText="Search Days..."
-            tagRemoveIconColor="#CCC"
-            tagBorderColor="#CCC"
-            tagTextColor="#333"
-            selectedItemTextColor="#2c3e50"
-            selectedItemIconColor="#2c3e50"
-            itemTextColor="#000"
-            displayKey="name"
-            submitButtonColor="#2c3e50"
-            submitButtonText="Done"
-            styleMainWrapper={styles.multiSelect}
-          />
-        </View>
         
+        <View style={styles.daysWrapper}>
+  {days.map((day) => {
+    const isSelected = selectedDays.includes(day.id);
+    return (
+      <TouchableOpacity
+        key={day.id}
+        style={[styles.dayButton, isSelected && styles.dayButtonSelected]}
+        onPress={() => {
+          if (isSelected) {
+            setSelectedDays(selectedDays.filter((id) => id !== day.id));
+          } else {
+            setSelectedDays([...selectedDays, day.id]);
+          }
+        }}
+      >
+        <Text style={[styles.dayText, isSelected && styles.dayTextSelected]}>
+          {day.name.slice(0, 3)}
+        </Text>
+      </TouchableOpacity>
+    );
+  })}
+</View>
+
         {/* Submit Button */}
         <TouchableOpacity
           style={styles.addButton}
@@ -1237,36 +1238,34 @@ const MedicationReminderScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  
   container: {
     flex: 1,
+    backgroundColor: '#F3F0FF', // Soft background
     padding: 16,
-    backgroundColor: '#f5f5f5',
+    borderRadius: 22, // <-- this gives the rounded background
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#2c3e50',
-  },
+
   formContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: '#D6CCF5', // Light indigo border
+    borderRadius: 10,
     marginBottom: 16,
     paddingHorizontal: 12,
     fontSize: 16,
+    color: '#4B3F72',
   },
   timeSelector: {
     flexDirection: 'row',
@@ -1274,13 +1273,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 50,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: '#D6CCF5',
+    borderRadius: 10,
     marginBottom: 16,
     paddingHorizontal: 12,
+    backgroundColor: '#EFEAFC',
   },
   timeSelectorText: {
     fontSize: 16,
+    color: '#4B3F72',
   },
   daysContainer: {
     marginBottom: 16,
@@ -1290,21 +1291,45 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#2c3e50',
   },
-  multiSelect: {
+  dayButton: {
+    padding: 10,
+    margin: 5,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#D6CCF5',
     borderRadius: 8,
+    backgroundColor: '#EFEAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 70,
+  },
+  dayButtonSelected: {
+    backgroundColor: '#4B3F72',
+    borderColor: '#4B3F72',
+  },
+  dayText: {
+    color: '#4B3F72',
+    fontWeight: '500',
+  },
+  dayTextSelected: {
+    color: '#FFFFFF',
+  },
+  daysWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 10,
   },
   addButton: {
-    backgroundColor: '#2c3e50',
-    borderRadius: 8,
+    backgroundColor: '#4B3F72',
+    borderRadius: 10,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    marginTop: 10,
   },
   addButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -1315,7 +1340,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#2c3e50',
+    color: '#4B3F72',
   },
   emptyText: {
     fontSize: 16,
@@ -1327,8 +1352,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   medicationItem: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
     padding: 16,
     marginBottom: 8,
     flexDirection: 'row',
@@ -1336,7 +1361,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
@@ -1346,7 +1371,7 @@ const styles = StyleSheet.create({
   medicationName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#4B3F72',
   },
   medicationDetails: {
     fontSize: 14,
