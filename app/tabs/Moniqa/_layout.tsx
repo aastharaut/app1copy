@@ -1,13 +1,13 @@
 import { Stack } from 'expo-router';
 
-export default function ChatbotLayout() {
+export default function MoniqaLayout() {
   return (
     <Stack>
       <Stack.Screen 
         name="index" 
-        options={{ headerShown: false }}  // Crucial for index route
+        options={{ headerShown: true }}  // Crucial for index route
       />
-      <Stack.Screen name="Moniqa" />
+      <Stack.Screen name="Chat" />
     </Stack>
   );
 }
