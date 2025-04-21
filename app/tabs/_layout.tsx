@@ -45,28 +45,18 @@ const _layout = () => {
         }}
       />
 
-      {/* <Tabs.Screen
-        name="cycle"
+      <Tabs.Screen
+        name="Cycle"
         options={{
           title: "Cycle",
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="selection-ellipse" size={size} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+             name="selection-ellipse"
+              size={size} 
+              color={color} />
           ),
         }}
-      /> */}
-      <Tabs.Screen
-  name="Cycle"
-  options={{
-    title: "Cycle",
-    tabBarIcon: ({ color, size }) => (
-      <MaterialCommunityIcons 
-        name="selection-ellipse" 
-        size={size} 
-        color={color} 
       />
-    )
-  }}
-/>
 
       <Tabs.Screen
         name="Moniqa"
