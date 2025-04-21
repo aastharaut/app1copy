@@ -977,48 +977,50 @@ const MedicationReminderScreen: React.FC = () => {
     return true;
   }
 
-  // Function to schedule notifications
   async function scheduleNotifications(medicationId: string, medicationData: MedicationData): Promise<void> {
     const { medicationName, dosage, time, days } = medicationData;
     const hasPermission = await registerForPushNotificationsAsync();
     
     if (!hasPermission) return;
-
-    // Create notification triggers for each selected day
+  
     const notificationIds: string[] = [];
+    const notificationTime = new Date(time);
     
     for (const dayId of days) {
       const dayNumber = parseInt(dayId);
-      const weekday = dayNumber % 7; // 0 = Sunday, 1 = Monday
-      
-      const notificationTime = new Date(time);
-      
-      // For weekly repeating notifications
-      const trigger = {
-        hour: notificationTime.getHours(),
-        minute: notificationTime.getMinutes(),
+      const weekday = dayNumber === 7 ? 1 : dayNumber + 1;
+      const hour = notificationTime.getHours();
+      const minute = notificationTime.getMinutes();
+  
+      // Correct typing using the proper Expo Notifications interface
+      const trigger: Notifications.NotificationTriggerInput = {
+        repeats: true,
+        channelId: 'medication-reminders', // Optional but recommended
+        hour,
+        minute,
         weekday,
-        repeats: true
-      } as Notifications.NotificationTriggerInput;
-
-      const notificationId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: `Time to take ${medicationName}`,
-          body: `Remember to take ${dosage} of ${medicationName}`,
-          sound: true,
-          data: { medicationId },
-        },
-        trigger,
-      });
-
-      notificationIds.push(notificationId);
+      };
+  
+      try {
+        const notificationId = await Notifications.scheduleNotificationAsync({
+          content: {
+            title: `Time to take ${medicationName}`,
+            body: `Remember to take ${dosage} of ${medicationName}`,
+            sound: true,
+            data: { medicationId },
+          },
+          trigger,
+        });
+  
+        notificationIds.push(notificationId);
+      } catch (error) {
+        console.error('Failed to schedule notification:', error);
+      }
     }
-
-    // Save notification IDs to Firestore
+  
     const userId = auth.currentUser?.uid;
     if (!userId) return;
     
-    // syntax for updating document
     const medicationRef = doc(db, 'users', userId, 'medications', medicationId);
     await updateDoc(medicationRef, {
       notificationIds,

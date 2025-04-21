@@ -411,6 +411,7 @@ import { getDocs, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../../FirebaseConfig';
 import { useRouter } from 'expo-router';
 import MedicationReminder from './MedicationTracker';
+import AppointmentSummary from './Appointmentdetails';
 
 interface Doctor {
   id: string;
@@ -599,6 +600,12 @@ const DoctorListScreen = () => {
               showsVerticalScrollIndicator={false}
             />
           </View>
+          {/* Appointment Summary Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionHeader}>Your Upcoming Appointments</Text>
+            <AppointmentSummary />
+            </View>
+
 
           {/* Medication Reminder Section */}
           <View style={styles.sectionContainer}>

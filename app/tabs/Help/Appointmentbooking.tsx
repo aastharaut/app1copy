@@ -687,42 +687,42 @@ const getAvailableSlots = async (doctorId: string, date: string): Promise<string
   }
 };
 
-// Send email notification after booking
-const sendBookingConfirmationEmail = async (appointmentData: any, doctor: Doctor) => {
-  try {
-    // Get user email
-    const user = auth.currentUser;
-    if (!user || !user.email) {
-      console.error("User email not available");
-      return;
-    }
+// // Send email notification after booking
+// const sendBookingConfirmationEmail = async (appointmentData: any, doctor: Doctor) => {
+//   try {
+//     // Get user email
+//     const user = auth.currentUser;
+//     if (!user || !user.email) {
+//       console.error("User email not available");
+//       return;
+//     }
     
-    // Add the appointment details to a 'emailQueue' collection in Firestore
-    // This collection will be monitored by a Firebase Cloud Function that sends emails
-    const emailQueueRef = collection(db, 'emailQueue');
+//     // Add the appointment details to a 'emailQueue' collection in Firestore
+//     // This collection will be monitored by a Firebase Cloud Function that sends emails
+//     const emailQueueRef = collection(db, 'emailQueue');
     
-    await addDoc(emailQueueRef, {
-      type: 'APPOINTMENT_CONFIRMATION',
-      to: user.email,
-      status: 'pending',
-      createdAt: serverTimestamp(),
-      appointmentDetails: {
-        doctorName: doctor.name,
-        doctorId: doctor.id,
-        date: appointmentData.date,
-        timeSlot: appointmentData.timeSlot,
-        concerns: appointmentData.concerns,
-        userId: user.uid,
-        userName: user.displayName || user.email
-      }
-    });
+//     await addDoc(emailQueueRef, {
+//       type: 'APPOINTMENT_CONFIRMATION',
+//       to: user.email,
+//       status: 'pending',
+//       createdAt: serverTimestamp(),
+//       appointmentDetails: {
+//         doctorName: doctor.name,
+//         doctorId: doctor.id,
+//         date: appointmentData.date,
+//         timeSlot: appointmentData.timeSlot,
+//         concerns: appointmentData.concerns,
+//         userId: user.uid,
+//         userName: user.displayName || user.email
+//       }
+//     });
     
-    console.log(`Email confirmation queued for ${user.email}`);
-  } catch (error) {
-    console.error("Error sending confirmation email:", error);
-    // Don't throw the error - we still want the booking to succeed
-  }
-};
+//     console.log(`Email confirmation queued for ${user.email}`);
+//   } catch (error) {
+//     console.error("Error sending confirmation email:", error);
+//     // Don't throw the error - we still want the booking to succeed
+//   }
+// };
 
 const bookAppointment = async (appointmentData: AppointmentData, doctor: Doctor) => {
   try {
@@ -753,10 +753,6 @@ const bookAppointment = async (appointmentData: AppointmentData, doctor: Doctor)
     };
     
     const docRef = await addDoc(appointmentsRef, newAppointment);
-    
-    // Send confirmation email
-    await sendBookingConfirmationEmail(newAppointment, doctor);
-    
     return { id: docRef.id, ...newAppointment };
   } catch (error) {
     console.error("Error booking appointment:", error);
@@ -837,23 +833,22 @@ const BookAppointmentScreen = () => {
       setSymptoms([...symptoms, symptom]);
     }
   };
-
   const handleSubmit = async () => {
     if (!selectedSlot) {
       Alert.alert('Error', 'Please select a time slot');
       return;
     }
-
+  
     if (!concerns.trim()) {
       Alert.alert('Error', 'Please describe your concerns');
       return;
     }
-
+  
     if (!doctor) {
       Alert.alert('Error', 'Doctor information not available');
       return;
     }
-
+  
     try {
       setSubmitting(true);
       
@@ -873,8 +868,8 @@ const BookAppointmentScreen = () => {
       
       Alert.alert(
         'Success', 
-        'Your appointment has been booked successfully. A confirmation email has been sent to your registered email address.',
-        [{ text: 'OK', onPress: () => router.push('/tabs/Help/DoctorList') }]
+        'Your appointment has been booked successfully.',
+        [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (err) {
       setSubmitting(false);
@@ -882,6 +877,50 @@ const BookAppointmentScreen = () => {
       console.error(err);
     }
   };
+  // const handleSubmit = async () => {
+  //   if (!selectedSlot) {
+  //     Alert.alert('Error', 'Please select a time slot');
+  //     return;
+  //   }
+
+  //   if (!concerns.trim()) {
+  //     Alert.alert('Error', 'Please describe your concerns');
+  //     return;
+  //   }
+
+  //   if (!doctor) {
+  //     Alert.alert('Error', 'Doctor information not available');
+  //     return;
+  //   }
+
+  //   try {
+  //     setSubmitting(true);
+      
+  //     const appointmentData: AppointmentData = {
+  //       doctorId,
+  //       date: format(selectedDate, 'yyyy-MM-dd'),
+  //       timeSlot: selectedSlot,
+  //       concerns,
+  //       visitPrep: showPrepTool ? {
+  //         symptoms,
+  //         questions
+  //       } : null
+  //     };
+      
+  //     await bookAppointment(appointmentData, doctor);
+  //     setSubmitting(false);
+      
+  //     Alert.alert(
+  //       'Success', 
+  //       'Your appointment has been booked successfully.',
+  //       [{ text: 'OK', onPress: () => router.back() }]
+  //     );
+  //   } catch (err) {
+  //     setSubmitting(false);
+  //     Alert.alert('Error', err instanceof Error ? err.message : 'Failed to book appointment');
+  //     console.error(err);
+  //   }
+  // };
 
   const showAppointmentDatePicker = () => {
     setShowDatePicker(true);

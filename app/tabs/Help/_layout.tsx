@@ -10,6 +10,7 @@ export default function HelpLayout() {
       <Stack.Screen name="Appointmentbooking" />
       <Stack.Screen name="Doctorprofile" />
       <Stack.Screen name="MedicationTracker" />
+      <Stack.Screen name="Appointmentdetails" />
     </Stack>
   );
 }
