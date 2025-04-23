@@ -877,8 +877,19 @@ import { auth, db } from '../../../FirebaseConfig';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
-import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, serverTimestamp, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { 
+  collection, 
+  doc, 
+  onSnapshot, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  serverTimestamp, 
+  QueryDocumentSnapshot, 
+  DocumentData 
+} from 'firebase/firestore';
 import type { QuerySnapshot } from 'firebase/firestore';
+import * as Localization from 'expo-localization';
 
 // Type definitions
 interface DayItem {
@@ -892,7 +903,7 @@ interface Medication {
   dosage: string;
   time: string;
   days: string[];
-  createdAt: any;
+  createdAt: any; // Using any for serverTimestamp compatibility
   notificationIds?: string[];
 }
 
@@ -901,7 +912,7 @@ interface MedicationData {
   dosage: string;
   time: string;
   days: string[];
-  createdAt: any;
+  createdAt: any; // Using any for serverTimestamp compatibility
 }
 
 // Configure notifications
@@ -922,6 +933,7 @@ const MedicationReminderScreen: React.FC = () => {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Days of the week for selection
   const days: DayItem[] = [
@@ -934,78 +946,180 @@ const MedicationReminderScreen: React.FC = () => {
     { id: '7', name: 'Sunday' },
   ];
 
-  // Request permissions for notifications
+  // Request permissions and fetch medications on mount
   useEffect(() => {
-    registerForPushNotificationsAsync();
+    const setup = async () => {
+      await registerForPushNotificationsAsync();
+      fetchMedications();
+    };
     
-    // Fetch existing medications
+    setup();
+    
+    return () => {
+      // Cleanup function will be called when component unmounts
+    };
+  }, []);
+
+  // Fetch medications from Firestore
+  const fetchMedications = () => {
     const userId = auth.currentUser?.uid;
     if (!userId) {
       setLoading(false);
       return;
     }
     
-    //  syntax for collection and onSnapshot
     const medicationsRef = collection(db, 'users', userId, 'medications');
-    const unsubscribe = onSnapshot(medicationsRef, (querySnapshot: QuerySnapshot) => {
-      const medicationList: Medication[] = [];
-      querySnapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
-        const medication = doc.data() as Omit<Medication, 'id'>;
-        medicationList.push({ id: doc.id, ...medication });
-      });
-      setMedications(medicationList);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      medicationsRef, 
+      (querySnapshot: QuerySnapshot) => {
+        const medicationList: Medication[] = [];
+        querySnapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
+          const medication = doc.data() as Omit<Medication, 'id'>;
+          medicationList.push({ id: doc.id, ...medication });
+        });
+        
+        // Sort medications by time
+        medicationList.sort((a, b) => {
+          const timeA = new Date(a.time).getTime();
+          const timeB = new Date(b.time).getTime();
+          return timeA - timeB;
+        });
+        
+        setMedications(medicationList);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching medications:', error);
+        setLoading(false);
+      }
+    );
 
-    return () => unsubscribe();
-  }, []);
+    return unsubscribe;
+  };
 
   // Function to request notification permissions
   async function registerForPushNotificationsAsync(): Promise<boolean> {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    
-    if (finalStatus !== 'granted') {
-      Alert.alert('Permission Required', 'You need to enable notifications to receive medication reminders.');
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      
+      if (finalStatus !== 'granted') {
+        Alert.alert(
+          'Permission Required', 
+          'You need to enable notifications to receive medication reminders.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+      
+      // Create notification channel for Android
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('medication-reminders', {
+          name: 'Medication Reminders',
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+          //sound: true,
+        });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error requesting notification permissions:', error);
       return false;
     }
-    return true;
   }
 
+  // // Schedule notifications for medication
+  // async function scheduleNotifications(medicationId: string, medicationData: MedicationData): Promise<string[]> {
+  //   try {
+  //     const hasPermission = await registerForPushNotificationsAsync();
+  //     if (!hasPermission) return [];
+
+  //     const notificationIds: string[] = [];
+  //     const timeString = medicationData.time;
+  //     const notificationTime = new Date(timeString);
+  //     const hours = notificationTime.getHours();
+  //     const minutes = notificationTime.getMinutes();
+      
+  //     const timezone = Localization.timezone;
+      
+  //     for (const dayId of medicationData.days) {
+  //       // Use day ID directly as weekday (1-7 where 1 is Monday)
+  //       const weekday = parseInt(dayId);
+        
+  //       const trigger: Notifications.NotificationTriggerInput = {
+  //         hour: hours,
+  //         minute: minutes,
+  //         weekday: weekday,
+  //         repeats: true,
+  //         channelId: 'medication-reminders',
+  //       };
+        
+  //       // iOS requires timeZone in the trigger
+  //       if (Platform.OS === 'ios') {
+  //         (trigger as any).timeZone = timezone;
+  //       }
+
+  //       const notificationId = await Notifications.scheduleNotificationAsync({
+  //         content: {
+  //           title: `Time to take ${medicationData.medicationName}`,
+  //           body: `Remember to take ${medicationData.dosage} of ${medicationData.medicationName}`,
+  //           sound: true,
+  //           data: { medicationId },
+  //         },
+  //         trigger,
+  //       });
+
+  //       notificationIds.push(notificationId);
+  //     }
+
+  //     return notificationIds;
+  //   } catch (error) {
+  //     console.error('Failed to schedule notification:', error);
+  //     Alert.alert('Error', 'Failed to schedule medication reminders');
+  //     return [];
+  //   }
+  // }
   async function scheduleNotifications(medicationId: string, medicationData: MedicationData): Promise<void> {
-    const { medicationName, dosage, time, days } = medicationData;
-    const hasPermission = await registerForPushNotificationsAsync();
-    
-    if (!hasPermission) return;
+    try {
+      const hasPermission = await registerForPushNotificationsAsync();
+      if (!hasPermission) return;
   
-    const notificationIds: string[] = [];
-    const notificationTime = new Date(time);
-    
-    for (const dayId of days) {
-      const dayNumber = parseInt(dayId);
-      const weekday = dayNumber === 7 ? 1 : dayNumber + 1;
-      const hour = notificationTime.getHours();
-      const minute = notificationTime.getMinutes();
+      const notificationIds: string[] = [];
+      const timeString = medicationData.time;
+      const notificationTime = new Date(timeString);
+      const hours = notificationTime.getHours();
+      const minutes = notificationTime.getMinutes();
+      
+      const timezone = Localization.timezone;
+      
+      for (const dayId of medicationData.days) {
+        // Convert day ID to weekday number that matches Expo's expected format (1-7, where 1 is Monday)
+        const weekday = parseInt(dayId);
+        
+        const trigger: Notifications.NotificationTriggerInput = {
+          hour: hours,
+          minute: minutes,
+          weekday: weekday, // Expo expects 1-7 where 1 is Monday
+          repeats: true,
+          channelId: 'medication-reminders',
+        };
+        
+        // iOS requires timeZone in the trigger
+        if (Platform.OS === 'ios') {
+          (trigger as any).timeZone = timezone;
+        }
   
-      // Correct typing using the proper Expo Notifications interface
-      const trigger: Notifications.NotificationTriggerInput = {
-        repeats: true,
-        channelId: 'medication-reminders', // Optional but recommended
-        hour,
-        minute,
-        weekday,
-      };
-  
-      try {
         const notificationId = await Notifications.scheduleNotificationAsync({
           content: {
-            title: `Time to take ${medicationName}`,
-            body: `Remember to take ${dosage} of ${medicationName}`,
+            title: `Time to take ${medicationData.medicationName}`,
+            body: `Remember to take ${medicationData.dosage} of ${medicationData.medicationName}`,
             sound: true,
             data: { medicationId },
           },
@@ -1013,20 +1127,19 @@ const MedicationReminderScreen: React.FC = () => {
         });
   
         notificationIds.push(notificationId);
-      } catch (error) {
-        console.error('Failed to schedule notification:', error);
       }
-    }
   
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-    
-    const medicationRef = doc(db, 'users', userId, 'medications', medicationId);
-    await updateDoc(medicationRef, {
-      notificationIds,
-    });
+      // Save notification IDs to Firestore
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        const medicationRef = doc(db, 'users', userId, 'medications', medicationId);
+        await updateDoc(medicationRef, { notificationIds });
+      }
+    } catch (error) {
+      console.error('Failed to schedule notification:', error);
+      Alert.alert('Error', 'Failed to schedule medication reminders');
+    }
   }
-
   // Handle time picker change
   const onTimeChange = (event: any, selectedTime?: Date) => {
     const currentTime = selectedTime || time;
@@ -1034,33 +1147,39 @@ const MedicationReminderScreen: React.FC = () => {
     setTime(currentTime);
   };
 
-  // Handle form submission
-  const addMedicationReminder = async (): Promise<void> => {
+  // Validate form inputs
+  const validateForm = (): boolean => {
     if (!medicationName.trim()) {
       Alert.alert('Error', 'Medication name is required');
-      return;
+      return false;
     }
 
     if (!dosage.trim()) {
       Alert.alert('Error', 'Dosage is required');
-      return;
+      return false;
     }
 
     if (selectedDays.length === 0) {
       Alert.alert('Error', 'Please select at least one day');
-      return;
+      return false;
     }
 
+    return true;
+  };
+
+  // Handle form submission
+  const addMedicationReminder = async (): Promise<void> => {
+    if (!validateForm() || isSubmitting) return;
+
     try {
-      setLoading(true);
+      setIsSubmitting(true);
       const userId = auth.currentUser?.uid;
       if (!userId) {
         Alert.alert('Error', 'User not authenticated');
-        setLoading(false);
         return;
       }
       
-      // syntax for creating document
+      // Create document reference
       const medicationsCollection = collection(db, 'users', userId, 'medications');
       const newMedicationRef = doc(medicationsCollection);
 
@@ -1072,10 +1191,14 @@ const MedicationReminderScreen: React.FC = () => {
         createdAt: serverTimestamp(),
       };
 
-      await setDoc(newMedicationRef, medicationData);
+      // Schedule notifications before saving to Firestore
+      const notificationIds = await scheduleNotifications(newMedicationRef.id, medicationData);
       
-      // Schedule notifications
-      await scheduleNotifications(newMedicationRef.id, medicationData);
+      // Add notification IDs to medication data
+      await setDoc(newMedicationRef, {
+        ...medicationData,
+        notificationIds
+      });
       
       // Reset form
       setMedicationName('');
@@ -1084,36 +1207,51 @@ const MedicationReminderScreen: React.FC = () => {
       setSelectedDays([]);
       
       Alert.alert('Success', 'Medication reminder added successfully');
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error adding medication reminder:', error);
       Alert.alert('Error', 'Failed to add medication reminder');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   // Delete medication reminder
   const deleteMedication = async (medication: Medication): Promise<void> => {
-    try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) return;
-      
-      // Cancel scheduled notifications
-      if (medication.notificationIds) {
-        for (const notificationId of medication.notificationIds) {
-          await Notifications.cancelScheduledNotificationAsync(notificationId);
+    Alert.alert(
+      'Confirm Deletion',
+      `Are you sure you want to delete reminder for ${medication.medicationName}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const userId = auth.currentUser?.uid;
+              if (!userId) return;
+              
+              // Cancel scheduled notifications
+              if (medication.notificationIds && medication.notificationIds.length > 0) {
+                await Promise.all(
+                  medication.notificationIds.map(id => 
+                    Notifications.cancelScheduledNotificationAsync(id)
+                  )
+                );
+              }
+              
+              // Delete document from Firestore
+              const medicationRef = doc(db, 'users', userId, 'medications', medication.id);
+              await deleteDoc(medicationRef);
+                
+              Alert.alert('Success', 'Medication reminder deleted');
+            } catch (error) {
+              console.error('Error deleting medication:', error);
+              Alert.alert('Error', 'Failed to delete medication reminder');
+            }
+          }
         }
-      }
-      
-      // syntax for deleting document
-      const medicationRef = doc(db, 'users', userId, 'medications', medication.id);
-      await deleteDoc(medicationRef);
-        
-      Alert.alert('Success', 'Medication reminder deleted');
-    } catch (error: unknown) {
-      console.error('Error deleting medication:', error);
-      Alert.alert('Error', 'Failed to delete medication reminder');
-    }
+      ]
+    );
   };
 
   // Format time for display
@@ -1124,16 +1262,26 @@ const MedicationReminderScreen: React.FC = () => {
 
   // Format days for display
   const formatDays = (dayIds: string[]): string => {
-    return dayIds.map(id => {
-      const day = days.find(day => day.id === id);
-      return day ? day.name.substring(0, 3) : '';
-    }).join(', ');
+    return dayIds
+      .sort((a, b) => parseInt(a) - parseInt(b))
+      .map(id => {
+        const day = days.find(day => day.id === id);
+        return day ? day.name.substring(0, 3) : '';
+      })
+      .join(', ');
+  };
+
+  // Toggle day selection
+  const toggleDaySelection = (dayId: string): void => {
+    if (selectedDays.includes(dayId)) {
+      setSelectedDays(selectedDays.filter(id => id !== dayId));
+    } else {
+      setSelectedDays([...selectedDays, dayId]);
+    }
   };
 
   return (
     <View style={styles.container}>
-      
-      
       {/* Add Medication Form */}
       <View style={styles.formContainer}>
         <TextInput
@@ -1167,51 +1315,51 @@ const MedicationReminderScreen: React.FC = () => {
             mode="time"
             display="default"
             onChange={onTimeChange}
+            is24Hour={false}
           />
         )}
         
         {/* Days Selector */}
-        
         <View style={styles.daysWrapper}>
-  {days.map((day) => {
-    const isSelected = selectedDays.includes(day.id);
-    return (
-      <TouchableOpacity
-        key={day.id}
-        style={[styles.dayButton, isSelected && styles.dayButtonSelected]}
-        onPress={() => {
-          if (isSelected) {
-            setSelectedDays(selectedDays.filter((id) => id !== day.id));
-          } else {
-            setSelectedDays([...selectedDays, day.id]);
-          }
-        }}
-      >
-        <Text style={[styles.dayText, isSelected && styles.dayTextSelected]}>
-          {day.name.slice(0, 3)}
-        </Text>
-      </TouchableOpacity>
-    );
-  })}
-</View>
+          {days.map((day) => {
+            const isSelected = selectedDays.includes(day.id);
+            return (
+              <TouchableOpacity
+                key={day.id}
+                style={[styles.dayButton, isSelected && styles.dayButtonSelected]}
+                onPress={() => toggleDaySelection(day.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.dayText, isSelected && styles.dayTextSelected]}>
+                  {day.name.slice(0, 3)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         {/* Submit Button */}
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, isSubmitting && styles.disabledButton]}
           onPress={addMedicationReminder}
-          disabled={loading}
+          disabled={isSubmitting}
+          activeOpacity={0.8}
         >
           <Text style={styles.addButtonText}>Add Reminder</Text>
-          {loading && <ActivityIndicator size="small" color="#fff" style={styles.loader} />}
+          {isSubmitting && <ActivityIndicator size="small" color="#fff" style={styles.loader} />}
         </TouchableOpacity>
       </View>
       
       {/* Medications List */}
       <Text style={styles.sectionTitle}>Your Medications</Text>
       {loading ? (
-        <ActivityIndicator size="large" color="#4B0082" />
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#4B0082" />
+        </View>
       ) : medications.length === 0 ? (
-        <Text style={styles.emptyText}>No medications added yet.</Text>
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptyText}>No medications added yet.</Text>
+        </View>
       ) : (
         <ScrollView style={styles.listContainer}>
           {medications.map((medication) => (
@@ -1228,6 +1376,7 @@ const MedicationReminderScreen: React.FC = () => {
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => deleteMedication(medication)}
+                hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}
               >
                 <Ionicons name="trash-outline" size={24} color="#4B0082" />
               </TouchableOpacity>
@@ -1240,14 +1389,17 @@ const MedicationReminderScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  
   container: {
     flex: 1,
     backgroundColor: '#F3F0FF', // Soft background
     padding: 16,
-    borderRadius: 22, // <-- this gives the rounded background
+    borderRadius: 22, // Rounded background
   },
-
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   formContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -1293,6 +1445,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#2c3e50',
   },
+  daysWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
   dayButton: {
     padding: 10,
     margin: 5,
@@ -1315,12 +1473,6 @@ const styles = StyleSheet.create({
   dayTextSelected: {
     color: '#FFFFFF',
   },
-  daysWrapper: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
   addButton: {
     backgroundColor: '#4B0082',
     borderRadius: 10,
@@ -1329,6 +1481,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     marginTop: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#9370DB',
   },
   addButtonText: {
     color: '#FFFFFF',

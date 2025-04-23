@@ -672,7 +672,7 @@ const AnalysisScreen = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#6C63FF" />
+        <ActivityIndicator size="large" color="#4B0082" />
         <Text style={styles.loadingText}>Analyzing your cycle data...</Text>
       </View>
     );
@@ -694,13 +694,13 @@ const AnalysisScreen = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Cycle Analysis</Text>
         <TouchableOpacity onPress={fetchAnalysisData} style={styles.refreshButton}>
-          <Ionicons name="refresh" size={24} color="#6C63FF" />
+          <Ionicons name="refresh" size={24} color="#4B0082" />
         </TouchableOpacity>
       </View>
       
       {/* Cycle Metrics */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Cycle Metrics</Text>
+        <Text style={styles.sectionTitle}>Your Current Cycle Metrics</Text>
         <View style={styles.metricsContainer}>
           <View style={styles.metricBox}>
             <Text style={styles.metricValue}>{avgCycleLength}</Text>
@@ -728,7 +728,7 @@ const AnalysisScreen = () => {
         {nextPeriods.map((date, index) => (
           <View key={index} style={styles.predictionCard}>
             <View style={styles.predictionIconContainer}>
-              <Ionicons name="calendar" size={24} color="#6C63FF" />
+              <Ionicons name="calendar" size={24} color="#4B0082" />
             </View>
             <View style={styles.predictionTextContainer}>
               <Text style={styles.predictionPrimary}>
@@ -754,7 +754,7 @@ const AnalysisScreen = () => {
           periodHistory.slice(0, 5).map((period, index) => (
             <View key={index} style={styles.historyItem}>
               <View style={styles.historyIconContainer}>
-                <Ionicons name="water" size={20} color="#8B5CF6" />
+                <Ionicons name="water" size={20} color="#4B0082" />
               </View>
               <View style={styles.historyTextContainer}>
                 <Text style={styles.historyDate}>
@@ -814,15 +814,6 @@ const AnalysisScreen = () => {
            avgPeriodLength > 7 ? ' longer than' : ' about'} average.
         </Text>
       </View>
-      
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={styles.footerButton} 
-          onPress={() => router.push('/tabs/Cycle')}
-        >
-          <Text style={styles.footerButtonText}>Back to Cycle</Text>
-        </TouchableOpacity>
-      </View>
     </ScrollView>
   );
 };
@@ -853,7 +844,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#6C63FF',
+    color: '#4B0082',
   },
   refreshButton: {
     padding: 8,
@@ -899,7 +890,7 @@ const styles = StyleSheet.create({
   metricValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#6C63FF',
+    color: '#4B0082',
   },
   metricLabel: {
     fontSize: 12,
@@ -910,10 +901,6 @@ const styles = StyleSheet.create({
   metricUnit: {
     fontSize: 12,
     color: '#999',
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
   },
   predictionCard: {
     flexDirection: 'row',
@@ -945,7 +932,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   predictionDaysContainer: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#4B0082',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
@@ -992,7 +979,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#4B0082',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -1022,27 +1009,13 @@ const styles = StyleSheet.create({
   },
   symptomCount: {
     fontSize: 12,
-    color: '#6C63FF',
+    color: '#4B0082',
   },
   insightText: {
     fontSize: 14,
     color: '#555',
     lineHeight: 20,
     marginBottom: 8,
-  },
-  footer: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  footerButton: {
-    backgroundColor: '#6C63FF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  footerButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
   },
   loadingText: {
     marginTop: 12,

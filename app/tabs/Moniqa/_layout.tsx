@@ -5,9 +5,9 @@ export default function MoniqaLayout() {
     <Stack>
       <Stack.Screen 
         name="index" 
-        options={{ headerShown: true }}  // Crucial for index route
+        options={{ headerShown: false }}  // Crucial for index route
       />
-      <Stack.Screen name="Chat" />
+      <Stack.Screen name="Chat" options={{ headerShown: false}} />
     </Stack>
   );
 }

@@ -2048,7 +2048,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     },
     cyclePhaseText: {
       fontSize: 16,
-      color: '#6C63FF',
+      color: '#4B0082',
       textAlign: 'center',
       maxWidth: circleSize * 0.6,
     },

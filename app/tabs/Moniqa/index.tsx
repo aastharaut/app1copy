@@ -1,62 +1,158 @@
-// app/chat/index.tsx (ChatIntroScreen)
-
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Platform,
+  KeyboardAvoidingView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { HeartPulse, Flame, Dumbbell, Apple } from 'lucide-react-native';
 
 export default function ChatIntroScreen() {
   const router = useRouter();
 
   return (
-    <ScrollView style={{ flex: 1, padding: 20, backgroundColor: '#fff' }}>
-      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#8b5cf6', textAlign: 'center', marginBottom: 10 }}>
-        Moniqa
-      </Text>
-      <Text style={{ fontSize: 16, textAlign: 'center', marginBottom: 20 }}>
-        Your personal women's health assistant for PCOS, menstrual health, and personalized wellness recommendations.
-      </Text>
-
-      <TouchableOpacity
-        style={{
-          backgroundColor: '#8b5cf6',
-          padding: 15,
-          borderRadius: 25,
-          alignSelf: 'center',
-          marginBottom: 30,
-          paddingHorizontal: 30,
-        }}
-        onPress={() => router.push('/tabs/Moniqa/Chat')}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
       >
-        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Start Chatting Now</Text>
-      </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingTop: 20,
+            paddingBottom: 20,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 32,
+              fontWeight: '700',
+              color: '#4B0082',
+              textAlign: 'center',
+              marginBottom: 6,
+            }}
+          >
+            Moniqa
+          </Text>
+          <Text
+            style={{
+              fontSize: 16,
+              textAlign: 'center',
+              color: '#555',
+              marginBottom: 25,
+              paddingHorizontal: 10,
+            }}
+          >
+            Your personal women’s health assistant for PCOS, menstrual wellness, and lifestyle support.
+          </Text>
 
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Get Personalized Health Advice</Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#4B0082',
+              paddingVertical: 14,
+              paddingHorizontal: 40,
+              borderRadius: 30,
+              alignSelf: 'center',
+              marginBottom: 35,
+              shadowColor: '#8b5cf6',
+              shadowOffset: { width: 0, height: 3 },
+              shadowOpacity: 0.3,
+              shadowRadius: 5,
+            }}
+            onPress={() => router.push('/tabs/Moniqa/Chat')}
+          >
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>
+              Start Chatting Now
+            </Text>
+          </TouchableOpacity>
 
-      <View style={{ gap: 15, marginBottom: 30 }}>
-        {[
-          { title: 'PCOS Management', desc: 'Learn about symptoms, treatments, and lifestyle changes for PCOS.' },
-          { title: 'Menstrual Health', desc: 'Track and understand your cycle, irregularities, and symptoms.' },
-          { title: 'Hormonal Balance', desc: 'Discover how hormones affect your health and what you can do to maintain balance.' },
-        ].map((item, index) => (
-          <View key={index} style={{ borderWidth: 1, borderColor: '#eee', padding: 15, borderRadius: 15 }}>
-            <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>{item.title}</Text>
-            <Text>{item.desc}</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 15 }}>
+            Your Health, Simplified
+          </Text>
+
+          <View style={{ gap: 16, marginBottom: 30 }}>
+            {[
+              {
+                icon: <HeartPulse size={22} color="#4B0082" />,
+                title: 'PCOS Management',
+                desc: 'Understand symptoms, treatments, and lifestyle changes tailored to PCOS.',
+              },
+              {
+                icon: <Flame size={22} color="#4B0082" />,
+                title: 'Hormonal Balance',
+                desc: 'Discover how to maintain hormonal balance through informed choices.',
+              },
+            ].map((item, index) => (
+              <View
+                key={index}
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#eee',
+                  padding: 16,
+                  borderRadius: 16,
+                  backgroundColor: '#fafafa',
+                  flexDirection: 'row',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                }}
+              >
+                {item.icon}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '600', fontSize: 15, marginBottom: 4 }}>
+                    {item.title}
+                  </Text>
+                  <Text style={{ color: '#555' }}>{item.desc}</Text>
+                </View>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
 
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Diet & Exercise Recommendations</Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 15 }}>
+            Diet & Exercise Tips
+          </Text>
 
-      <View style={{ gap: 15 }}>
-        {[
-          { title: "Nutrition for Women's Health", desc: 'Get diet plans and nutritional advice specific to PCOS and menstrual health.' },
-          { title: 'Exercise Recommendations', desc: 'Find suitable workout routines for different phases of your cycle.' },
-        ].map((item, index) => (
-          <View key={index} style={{ borderWidth: 1, borderColor: '#eee', padding: 15, borderRadius: 15 }}>
-            <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>{item.title}</Text>
-            <Text>{item.desc}</Text>
+          <View style={{ gap: 16 }}>
+            {[
+              {
+                icon: <Apple size={22} color="#4B0082" />,
+                title: "Nutrition for Women's Health",
+                desc: 'Personalized diet tips and meal plans that support PCOS and hormone balance.',
+              },
+              {
+                icon: <Dumbbell size={22} color="#4B0082" />,
+                title: 'Exercise Recommendations',
+                desc: 'Workouts tailored for energy levels across your cycle phases.',
+              },
+            ].map((item, index) => (
+              <View
+                key={index}
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#eee',
+                  padding: 16,
+                  borderRadius: 16,
+                  backgroundColor: '#fafafa',
+                  flexDirection: 'row',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                }}
+              >
+                {item.icon}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '600', fontSize: 15, marginBottom: 4 }}>
+                    {item.title}
+                  </Text>
+                  <Text style={{ color: '#555' }}>{item.desc}</Text>
+                </View>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
-    </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
