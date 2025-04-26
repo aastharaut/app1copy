@@ -2095,21 +2095,12 @@ import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, serverTimestamp, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import type { QuerySnapshot } from 'firebase/firestore';
+import { SchedulableTriggerInputTypes } from 'expo-notifications';
 
 // Type definitions
 interface DayItem {
   id: string;
   name: string;
-}
-
-interface Medication {
-  id: string;
-  medicationName: string;
-  dosage: string;
-  time: string;
-  days: string[];
-  createdAt: any;
-  notificationIds?: string[];
 }
 
 interface MedicationData {
@@ -2119,8 +2110,8 @@ interface MedicationData {
   days: string[];
   createdAt: any;
   notificationIds?: string[];
-
 }
+
 interface Medication extends MedicationData {
   id: string;
 }
@@ -2134,6 +2125,69 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Testing function to verify notifications - call this from an admin screen or debug menu
+async function testNotificationsSystem(): Promise<void> {
+  try {
+    // Test immediate notification
+    const immediateId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Test Notification",
+        body: "This is an immediate notification test"
+      },
+      trigger: null // null trigger means send immediately
+    });
+    console.log(`Immediate notification scheduled: ${immediateId}`);
+    
+    // Test notification in 5 seconds
+    const inFiveSecondsId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "5 Second Test",
+        body: "This notification was scheduled to arrive 5 seconds after setup"
+      },
+      trigger: {
+        type: 'timeInterval',
+        seconds: 5
+      } as Notifications.TimeIntervalTriggerInput
+    });
+    console.log(`5-second notification scheduled: ${inFiveSecondsId}`);
+    
+    // Test daily notification at a specific time
+    const now = new Date();
+    const dailyTime = new Date();
+    // Set for 1 minute from now
+    dailyTime.setMinutes(now.getMinutes() + 1);
+    
+    const dailyId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Daily Test",
+        body: `This notification should arrive daily at ${dailyTime.getHours()}:${dailyTime.getMinutes()}`
+      },
+      trigger: {
+        type: 'daily',
+        hour: dailyTime.getHours(),
+        minute: dailyTime.getMinutes(),
+        repeats: true
+      } as Notifications.DailyTriggerInput
+    });
+    console.log(`Daily notification scheduled: ${dailyId}`);
+    
+    // Get all scheduled notifications to verify
+    const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+    console.log(`Total scheduled notifications: ${allScheduled.length}`);
+    console.log("Scheduled notification details:", JSON.stringify(allScheduled, null, 2));
+    
+    Alert.alert("Test Notifications", 
+      `Scheduled ${allScheduled.length} test notifications.\n` +
+      `- 1 immediate\n` +
+      `- 1 in 5 seconds\n` +
+      `- 1 daily at ${dailyTime.getHours()}:${dailyTime.getMinutes()}`
+    );
+  } catch (error) {
+    console.error("Error testing notifications:", error);
+    Alert.alert("Notification Test Failed", "Check console for details");
+  }
+}
+
 const MedicationReminderScreen: React.FC = () => {
   // State variables
   const [medicationName, setMedicationName] = useState<string>('');
@@ -2146,13 +2200,13 @@ const MedicationReminderScreen: React.FC = () => {
 
   // Days of the week for selection
   const days: DayItem[] = [
-    { id: '1', name: 'Monday' },
-    { id: '2', name: 'Tuesday' },
-    { id: '3', name: 'Wednesday' },
-    { id: '4', name: 'Thursday' },
-    { id: '5', name: 'Friday' },
-    { id: '6', name: 'Saturday' },
-    { id: '7', name: 'Sunday' },
+    { id: '1', name: 'Sunday' },
+    { id: '2', name: 'Monday' },
+    { id: '3', name: 'Tuesday' },
+    { id: '4', name: 'Wednesday' },
+    { id: '5', name: 'Thursday' },
+    { id: '6', name: 'Friday' },
+    { id: '7', name: 'Saturday' },
   ];
 
   // Request permissions for notifications and setup channel
@@ -2192,23 +2246,23 @@ const MedicationReminderScreen: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
- // Function to setup notification channel (Android)
-async function setupNotificationChannel() {
-  if (Platform.OS === 'android') {
-    try {
-      await Notifications.setNotificationChannelAsync('medication-reminders', {
-        name: 'Medication Reminders',
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: 'default', // Use default notification sound
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF231F7C',
-      });
-      console.log('Notification channel created successfully');
-    } catch (error) {
-      console.error('Error creating notification channel:', error);
+  // Function to setup notification channel (Android)
+  async function setupNotificationChannel() {
+    if (Platform.OS === 'android') {
+      try {
+        await Notifications.setNotificationChannelAsync('medication-reminders', {
+          name: 'Medication Reminders',
+          importance: Notifications.AndroidImportance.HIGH,
+          sound: 'default', // Use default notification sound
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+        });
+        console.log('Notification channel created successfully');
+      } catch (error) {
+        console.error('Error creating notification channel:', error);
+      }
     }
   }
-}
 
   // Function to request notification permissions
   async function registerForPushNotificationsAsync(): Promise<boolean> {
@@ -2227,129 +2281,97 @@ async function setupNotificationChannel() {
     return true;
   }
 
-  // async function scheduleNotifications(medicationId: string, medicationData: MedicationData): Promise<void> {
-  //   const { medicationName, dosage, time, days } = medicationData;
-    
-  //   // Verify permissions
-  //   const settings = await Notifications.getPermissionsAsync();
-  //   if (!settings.granted) {
-  //     const { granted } = await Notifications.requestPermissionsAsync();
-  //     if (!granted) return;
-  //   }
-
-  //   const notificationIds: string[] = [];
-  //   const notificationTime = new Date(time);
-  //   notificationTime.setSeconds(0, 0); // Clean time without seconds/millis
-    
-  //   for (const dayId of days) {
-  //     const weekday = parseInt(dayId); // Days are already 1-7 for Monday-Sunday
-  //     const hour = notificationTime.getHours();
-  //     const minute = notificationTime.getMinutes();
-  
-  //     const trigger: Notifications.NotificationTriggerInput = {
-  //       repeats: true,
-  //       channelId: 'medication-reminders',
-  //       hour,
-  //       minute,
-  //       weekday,
-  //     };
-  
-  //     try {
-  //       const notificationId = await Notifications.scheduleNotificationAsync({
-  //         content: {
-  //           title: `Time to take ${medicationName}`,
-  //           body: `Remember to take ${dosage} of ${medicationName}`,
-  //           sound: true,
-  //           data: { medicationId },
-  //         },
-  //         trigger,
-  //       });
-  
-  //       notificationIds.push(notificationId);
-  //     } catch (error) {
-  //       console.error('Failed to schedule notification:', error);
-  //     }
-  //   }
-  
-  //   // Log scheduled notifications for debugging
-  //   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-  //   console.log('Currently scheduled notifications:', scheduled);
-  
-  //   // Save notification IDs to Firestore
-  //   const userId = auth.currentUser?.uid;
-  //   if (!userId) return;
-    
-  //   const medicationRef = doc(db, 'users', userId, 'medications', medicationId);
-  //   await updateDoc(medicationRef, {
-  //     notificationIds,
-  //   });
-  // }
-
   async function scheduleNotifications(medicationId: string, medicationData: MedicationData): Promise<void> {
     const { medicationName, dosage, time, days } = medicationData;
     
     // Verify permissions
-    const settings = await Notifications.getPermissionsAsync();
-    if (!settings.granted) {
-      const { granted } = await Notifications.requestPermissionsAsync();
-      if (!granted) return;
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      const { status: newStatus } = await Notifications.requestPermissionsAsync();
+      if (newStatus !== 'granted') {
+        Alert.alert('Permission Required', 'Notifications are required for medication reminders');
+        return;
+      }
     }
   
     const notificationIds: string[] = [];
     const notificationTime = new Date(time);
-    notificationTime.setSeconds(0, 0); // Clean time without seconds/millis
-    
-    // Cancel any existing notifications for this medication
-    if (medicationData.notificationIds) {
+    notificationTime.setSeconds(0, 0);
+  
+    // Cancel existing notifications if any
+    if (medicationData.notificationIds?.length) {
       for (const notificationId of medicationData.notificationIds) {
-        await Notifications.cancelScheduledNotificationAsync(notificationId);
+        try {
+          await Notifications.cancelScheduledNotificationAsync(notificationId);
+        } catch (error) {
+          console.error(`Failed to cancel notification ${notificationId}:`, error);
+        }
       }
     }
   
+    // Create weekly triggers for each selected day
     for (const dayId of days) {
-      const weekday = parseInt(dayId); // Days are already 1-7 for Monday-Sunday
+      const weekday = parseInt(dayId); // 1-7
       const hour = notificationTime.getHours();
       const minute = notificationTime.getMinutes();
   
       try {
+        // Use proper WeeklyTriggerInput with required type property
+        const trigger: Notifications.WeeklyTriggerInput = {
+          type: SchedulableTriggerInputTypes.WEEKLY,
+          hour,
+          minute,
+          weekday,
+          //repeats: true
+        };
+        
+        // Create notification content with proper channel ID for Android
+        const notificationContent: Notifications.NotificationContentInput = {
+          title: `Time to take ${medicationName}`,
+          body: `Remember to take ${dosage} of ${medicationName}`,
+          sound: true,
+          data: { medicationId },
+        };
+        
+        // For Android, properly set the Android-specific options
+        if (Platform.OS === 'android') {
+          (notificationContent as any).androidNotificationChannelId = 'medication-reminders';
+        }
+  
         const notificationId = await Notifications.scheduleNotificationAsync({
-          content: {
-            title: `Time to take ${medicationName}`,
-            body: `Remember to take ${dosage} of ${medicationName}`,
-            sound: true,
-            data: { medicationId },
-          },
-          trigger: {
-            weekday,
-            hour,
-            minute,
-            repeats: true,
-            channelId: 'medication-reminders'
-          },
+          content: notificationContent,
+          trigger,
         });
   
         notificationIds.push(notificationId);
-        console.log(`Scheduled notification for ${weekday} at ${hour}:${minute}`);
+        console.log(`Scheduled for ${weekdayToName(weekday)} at ${hour}:${minute}, ID: ${notificationId}`);
+        
+        // For debugging - check the scheduled notification
+        if (__DEV__) {
+          const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+          console.log(`Total scheduled notifications: ${allScheduled.length}`);
+        }
       } catch (error) {
-        console.error('Failed to schedule notification:', error);
+        console.error(`Failed to schedule for day ${weekday}:`, error);
       }
     }
   
-    // Verify the notifications were scheduled
-    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    console.log('Scheduled notifications:', scheduled);
-  
-    // Save notification IDs to Firestore
+    // Save to Firestore
     const userId = auth.currentUser?.uid;
-    if (!userId) return;
-    
-    const medicationRef = doc(db, 'users', userId, 'medications', medicationId);
-    await updateDoc(medicationRef, {
-      notificationIds,
-    });
+    if (userId) {
+      const medicationRef = doc(db, 'users', userId, 'medications', medicationId);
+      await updateDoc(medicationRef, { notificationIds });
+    }
   }
+  
+  // Helper function to convert weekday number to name
+  function weekdayToName(weekday: number): string {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    return days[weekday - 1] || `Day ${weekday}`;
+  }
+  
   // Handle time picker change
-  const onTimeChange = (event: any, selectedTime?: Date) => {
+  const onTimeChange = (_event: any, selectedTime?: Date) => {
     const currentTime = selectedTime || time;
     setShowTimePicker(Platform.OS === 'ios');
     setTime(currentTime);
@@ -2419,9 +2441,13 @@ async function setupNotificationChannel() {
       if (!userId) return;
       
       // Cancel scheduled notifications
-      if (medication.notificationIds) {
+      if (medication.notificationIds?.length) {
         for (const notificationId of medication.notificationIds) {
-          await Notifications.cancelScheduledNotificationAsync(notificationId);
+          try {
+            await Notifications.cancelScheduledNotificationAsync(notificationId);
+          } catch (error) {
+            console.error(`Failed to cancel notification ${notificationId}:`, error);
+          }
         }
       }
       
@@ -2441,12 +2467,22 @@ async function setupNotificationChannel() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Format days for display
-  const formatDays = (dayIds: string[]): string => {
-    return dayIds.map(id => {
-      const day = days.find(day => day.id === id);
-      return day ? day.name.substring(0, 3) : '';
-    }).join(', ');
+  const formatDays = (dayIds?: string[] | null): string => {
+    // Handle undefined/null cases
+    if (!dayIds) return 'None selected';
+    
+    // Ensure it's an array
+    if (!Array.isArray(dayIds)) return 'Invalid selection';
+  
+    // Handle empty array
+    if (dayIds.length === 0) return 'None selected';
+  
+    // Process valid days
+    const formatted = dayIds
+      .map(id => days.find(day => day.id === id)?.name.substring(0, 3))
+      .filter(Boolean);
+  
+    return formatted.length > 0 ? formatted.join(', ') : 'Invalid days';
   };
 
   return (
@@ -2520,6 +2556,16 @@ async function setupNotificationChannel() {
           <Text style={styles.addButtonText}>Add Reminder</Text>
           {loading && <ActivityIndicator size="small" color="#fff" style={styles.loader} />}
         </TouchableOpacity>
+        
+        {/* Test Button - Only show in development */}
+        {__DEV__ && (
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: '#777', marginTop: 8 }]}
+            onPress={testNotificationsSystem}
+          >
+            <Text style={styles.addButtonText}>Test Notifications</Text>
+          </TouchableOpacity>
+        )}
       </View>
       
       {/* Medications List */}
