@@ -604,6 +604,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, serverTimestamp, getDoc, DocumentData } from 'firebase/firestore';
 import { auth, db } from '../../../FirebaseConfig';
+import { SafeAreaView } from 'react-native-safe-area-context'; 
 
 // Define types
 interface Doctor {
@@ -943,6 +944,7 @@ const BookAppointmentScreen = () => {
   }
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Book an Appointment</Text>
@@ -1072,6 +1074,7 @@ const BookAppointmentScreen = () => {
         )}
       </TouchableOpacity>
     </ScrollView>
+  </SafeAreaView>
   );
 };
 

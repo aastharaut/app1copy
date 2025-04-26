@@ -1432,7 +1432,439 @@
 // export default CalendarScreen;
 
 
-import React, { useState, useEffect } from "react";
+// import React, { useState, useEffect } from "react";
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   ActivityIndicator,
+//   TouchableOpacity,
+//   SafeAreaView,
+// } from "react-native";
+// import { CalendarList } from "react-native-calendars";
+// import { getFirestore, doc, getDoc, Timestamp } from "firebase/firestore";
+// import { getAuth } from "firebase/auth";
+// import { addDays, format, isBefore, isAfter, isEqual } from "date-fns";
+// import { parseISO } from "date-fns/parseISO";
+// //import { addDays, format, isBefore, isAfter, parseISO, isEqual } from "date-fns";
+
+// const db = getFirestore();
+// const auth = getAuth();
+
+// interface UserCycleData {
+//   userId: string;
+//   lastPeriodDate1: Timestamp | Date;
+//   lastPeriodDate2: Timestamp | Date | null;
+//   periodLength: number;
+//   cycleLength: number;
+//   currentCycleDay?: number;
+//   currentPhase?: string;
+//   predictedNextPeriodDate?: Timestamp | Date;
+//   predictedOvulationDate?: Timestamp | Date;
+//   lastUpdated?: any;
+// }
+
+// const CalendarScreen: React.FC = () => {
+//   const [selectedDate, setSelectedDate] = useState<string>("");
+//   const [cycleData, setCycleData] = useState<UserCycleData | null>(null);
+//   const [loading, setLoading] = useState(true);
+//   const [markedDates, setMarkedDates] = useState<Record<string, any>>({});
+//   const [user, setUser] = useState<any>(null);
+
+//   // Fetch authenticated user
+//   useEffect(() => {
+//     const unsubscribe = auth.onAuthStateChanged((user) => {
+//       if (user) {
+//         setUser(user);
+//       } else {
+//         setUser(null);
+//         setLoading(false);
+//       }
+//     });
+//     return unsubscribe;
+//   }, []);
+
+//   // Fetch cycle data when user is available
+//   useEffect(() => {
+//     if (!user) return;
+
+//     const fetchCycleData = async () => {
+//       try {
+//         setLoading(true);
+//         const cycleRef = doc(db, "cycles", user.uid);
+//         const docSnap = await getDoc(cycleRef);
+//         if (docSnap.exists()) {
+//           setCycleData(docSnap.data() as UserCycleData);
+//         } else {
+//           console.log("No cycle data found");
+//         }
+//       } catch (error) {
+//         console.error("Error fetching cycle data:", error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchCycleData();
+//   }, [user]);
+
+//   // Convert Firestore Timestamp to Date
+//   const toDate = (timestamp: Timestamp | Date | null | undefined): Date => {
+//     if (!timestamp) return new Date();
+//     if (timestamp instanceof Timestamp) {
+//       return timestamp.toDate();
+//     }
+//     return timestamp instanceof Date ? timestamp : new Date(timestamp);
+//   };
+
+//   // Calculate and set marked dates
+//   useEffect(() => {
+//     if (!cycleData || !user) return;
+
+//     const today = new Date();
+//     const marked: Record<string, any> = {};
+//     const periodLength = cycleData?.periodLength || 5;
+//     const cycleLength = cycleData?.cycleLength || 28;
+
+//     marked[format(today, "yyyy-MM-dd")] = {
+//       customStyles: {
+//         container: {
+//           backgroundColor: "#EDEDED",
+//           borderRadius: 16,
+//         },
+//         text: {
+//           color: "black",
+//           fontWeight: "bold",
+//         },
+//       },
+//     };
+
+
+//     // Get dates from cycle data
+//     const lastPeriod1 = toDate(cycleData.lastPeriodDate1);
+//     const lastPeriod2 = cycleData.lastPeriodDate2 ? toDate(cycleData.lastPeriodDate2) : null;
+
+//     // Mark past periods (from lastPeriodDate2 if available)
+//     // Update your date comparison logic in the marked dates useEffect:
+// if (lastPeriod2) {
+//   const periodEndDate2 = addDays(lastPeriod2, periodLength);
+//   let currentDate = new Date(lastPeriod2);
+  
+//   // Include equality checks
+//   while (isBefore(currentDate, periodEndDate2) || isEqual(currentDate, periodEndDate2)) {
+//     const dateStr = format(currentDate, "yyyy-MM-dd");
+//     marked[dateStr] = {
+//       customStyles: {
+//         container: {
+//           backgroundColor: "#FFC0CB", // Red for current period
+//           borderRadius: 16,
+//         },
+//         text: {
+//           color: "black",
+//         },
+//       },
+//     };
+//     currentDate = addDays(currentDate, 1);
+//   }
+// }
+
+//     // Current period (from lastPeriodDate1)
+//     const periodEndDate1 = addDays(lastPeriod1, cycleData.periodLength);
+//     if (isBefore(today, periodEndDate1)) {
+//       let currentDate = new Date(lastPeriod1);
+//       while (isBefore(currentDate, periodEndDate1)) {
+//         const dateStr = format(currentDate, "yyyy-MM-dd");
+//         marked[dateStr] = {
+//           customStyles: {
+//             container: {
+//               backgroundColor: "#FF3B30", // Red for current period
+//               borderRadius: 16,
+//             },
+//             text: {
+//               color: "white",
+//             },
+//           },
+//         };
+//         currentDate = addDays(currentDate, 1);
+//       }
+//     }
+
+//     // Ovulation (pale blue)
+//     const nextPeriodStart = addDays(lastPeriod1, cycleData.cycleLength);
+//     const ovulationStart = addDays(nextPeriodStart, -14);
+//     const ovulationEnd = addDays(ovulationStart, 3);
+//     let currentDate = new Date(ovulationStart);
+//     while (isBefore(currentDate, ovulationEnd)) {
+//       const dateStr = format(currentDate, "yyyy-MM-dd");
+//       marked[dateStr] = {
+//         customStyles: {
+//           container: {
+//             backgroundColor: "#B3E5FC", // Pale blue for ovulation
+//             borderRadius: 16,
+//           },
+//           text: {
+//             color: "black",
+//           },
+//         },
+//       };
+//       currentDate = addDays(currentDate, 1);
+//     }
+
+//     // Upcoming periods (next 3 cycles - light pink background)
+//     for (let i = 1; i <= 3; i++) {
+//       const periodStart = addDays(lastPeriod1, cycleData.cycleLength * i);
+//       const periodEnd = addDays(periodStart, cycleData.periodLength);
+//       let currentDate = new Date(periodStart);
+//       while (isBefore(currentDate, periodEnd)) {
+//         const dateStr = format(currentDate, "yyyy-MM-dd");
+//         marked[dateStr] = {
+//           customStyles: {
+//             container: {
+//               backgroundColor: "#F4C2C2", // Light pink for upcoming periods
+//               borderRadius: 16,
+//             },
+//             text: {
+//               color: "#FF3B30",
+//             },
+//           },
+//         };
+//         currentDate = addDays(currentDate, 1);
+//       }
+//     }
+
+//     setMarkedDates(marked);
+//   }, [cycleData]);
+
+//   const onDayPress = (day: any) => {
+//     setSelectedDate(day.dateString);
+//   };
+
+//   const renderDayDetails = () => {
+//     if (!selectedDate || !cycleData) return null;
+
+//     const date = parseISO(selectedDate);
+//     let details = [];
+
+//     const lastPeriod1 = toDate(cycleData.lastPeriodDate1);
+//     const lastPeriod2 = cycleData.lastPeriodDate2 ? toDate(cycleData.lastPeriodDate2) : null;
+
+//     // Check if it's in past period (lastPeriodDate2)
+//     if (lastPeriod2) {
+//       const periodEndDate2 = addDays(lastPeriod2, cycleData.periodLength);
+//       if (isAfter(date, lastPeriod2) && isBefore(date, periodEndDate2)) {
+//         details.push("Past menstrual day");
+//       }
+//     }
+
+//     // Check if it's in current period (lastPeriodDate1)
+//     const periodEndDate1 = addDays(lastPeriod1, cycleData.periodLength);
+//     if (isAfter(date, lastPeriod1) && isBefore(date, periodEndDate1)) {
+//       details.push("Current menstrual day");
+//     }
+
+//     // Check if it's an ovulation day
+//     const nextPeriodStart = addDays(lastPeriod1, cycleData.cycleLength);
+//     const ovulationStart = addDays(nextPeriodStart, -14);
+//     const ovulationEnd = addDays(ovulationStart, 3);
+//     if (isAfter(date, ovulationStart) && isBefore(date, ovulationEnd)) {
+//       details.push("Ovulation window");
+//     }
+
+//     // Check if it's an upcoming period day
+//     for (let i = 1; i <= 3; i++) {
+//       const periodStart = addDays(lastPeriod1, cycleData.cycleLength * i);
+//       const periodEnd = addDays(periodStart, cycleData.periodLength);
+//       if (isAfter(date, periodStart) && isBefore(date, periodEnd)) {
+//         details.push(`Predicted period day (Cycle ${i})`);
+//         break;
+//       }
+//     }
+
+//     // return (
+//     //   <View style={styles.detailsContainer}>
+//     //     <Text style={styles.detailsTitle}>{format(date, "MMMM do, yyyy")}</Text>
+//     //     {details.length > 0 ? (
+//     //       details.map((detail, index) => (
+//     //         <Text key={index} style={styles.detailText}>• {detail}</Text>
+//     //       ))
+//     //     ) : (
+//     //       <Text style={styles.detailText}>No cycle events this day</Text>
+//     //     )}
+//     //   </View>
+//     // );
+//   };
+
+//   if (loading) {
+//     return (
+//       <View style={styles.loadingContainer}>
+//         <ActivityIndicator size="large" color="#6C63FF" />
+//         <Text style={styles.loadingText}>Loading your cycle data...</Text>
+//       </View>
+//     );
+//   }
+
+//   if (!user) {
+//     return (
+//       <View style={styles.loadingContainer}>
+//         <Text style={styles.loadingText}>Please sign in to view your cycle calendar</Text>
+//       </View>
+//     );
+//   }
+
+//   return (
+//     <SafeAreaView style={styles.container}>
+//       <Text style={styles.header}>Your Cycle Calendar</Text>
+//       <View style={styles.calendarContainer}>
+//         {/* Use CalendarList with vertical scrolling */}
+//         <CalendarList
+//           onDayPress={onDayPress}
+//           markedDates={markedDates}
+//           markingType={"custom"}
+//           // Increase these values for more "infinite" scrolling
+//           pastScrollRange={24} // Allow scrolling back 24 months (2 years)
+//           futureScrollRange={24} // Allow scrolling forward 24 months (2 years)
+//           scrollEnabled={true}
+//           showScrollIndicator={true}
+//           calendarHeight={330} // Fixed height for calendar
+//           horizontal={false} // Vertical scrolling
+//           pagingEnabled={false} // Disable paging for smoother vertical scroll
+//           theme={{
+//             backgroundColor: "#ffffff",
+//             calendarBackground: "#ffffff",
+//             textSectionTitleColor: "#4B0082",
+//             selectedDayBackgroundColor: "#4B0082",
+//             selectedDayTextColor: "#ffffff",
+//             todayTextColor: "#4B0082",
+//             dayTextColor: "#2d4150",
+//             textDisabledColor: "#d9e1e8",
+//             dotColor: "#4B0082",
+//             selectedDotColor: "#ffffff",
+//             arrowColor: "#4B0082",
+//             monthTextColor: "#4B0082",
+//             indicatorColor: "#4B0082",
+//             textDayFontWeight: "500",
+//             textMonthFontWeight: "bold",
+//             textDayHeaderFontWeight: "500",
+//             textDayFontSize: 14,
+//             textMonthFontSize: 18,
+//             textDayHeaderFontSize: 14,
+//           }}
+//         />
+//       </View>
+//       {selectedDate ? renderDayDetails() : null}
+//       <View style={styles.bottomContainer}>
+//         <View style={styles.legendContainer}>
+//           <View style={styles.legendItem}>
+//             <View style={[styles.legendColor, { backgroundColor: "#FF3B30" }]} />
+//             <Text style={styles.legendText}>Current Period</Text>
+//           </View>
+//           <View style={styles.legendItem}>
+//             <View style={[styles.legendColor, { backgroundColor: "#F4C2C2" }]} />
+//             <Text style={styles.legendText}>Upcoming Period</Text>
+//           </View>
+//           <View style={styles.legendItem}>
+//             <View style={[styles.legendColor, { backgroundColor: "#B3E5FC" }]} />
+//             <Text style={styles.legendText}>Ovulation</Text>
+//           </View>
+//           {cycleData?.lastPeriodDate2 && (
+//             <View style={styles.legendItem}>
+//               <View style={[styles.legendColor, { backgroundColor: "#FFC0CB" }]} />
+//               <Text style={styles.legendText}>Past Period</Text>
+//             </View>
+//           )}
+//         </View>
+//       </View>
+//     </SafeAreaView>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: "#fff",
+//   },
+//   loadingContainer: {
+//     flex: 1,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   loadingText: {
+//     marginTop: 10,
+//     fontSize: 16,
+//     color: "#4B0082",
+//   },
+//   header: {
+//     fontSize: 24,
+//     fontWeight: "bold",
+//     textAlign: "center",
+//     marginVertical: 20,
+//     color: "#4B0082",
+//   },
+//   calendarContainer: {
+//     flex: 1,
+//     marginBottom: 10,
+//   },
+//   bottomContainer: {
+//     width: '100%',
+//     backgroundColor: '#fff',
+//     paddingTop: 10,
+//     paddingBottom: 20,
+//     borderTopWidth: 1,
+//     borderTopColor: '#eee',
+//     position: 'absolute',
+//     bottom: 0,
+//     left: 0,
+//     right: 0,
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: -2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 4,
+//     elevation: 5,
+//   },
+//   legendContainer: {
+//     flexDirection: "row",
+//     flexWrap: "wrap",
+//     justifyContent: "space-between", // changed from "space-around"
+//     paddingHorizontal: 10, // reduced from 20
+//   },
+//   legendItem: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     marginVertical: 5,
+//     width: '48%', // limit to 2 items per row
+//   },
+//   legendColor: {
+//     width: 16,
+//     height: 16,
+//     borderRadius: 8,
+//     marginRight: 8,
+//   },
+//   legendText: {
+//     fontSize: 14,
+//     color: "#333",
+//   },
+//   detailsContainer: {
+//     padding: 20,
+//     borderTopWidth: 1,
+//     borderTopColor: "#ddd",
+//     marginBottom: 100, // Increased margin to ensure content isn't hidden by the legend
+//   },
+//   detailsTitle: {
+//     fontSize: 18,
+//     fontWeight: "bold",
+//     marginBottom: 10,
+//     color: "#333",
+//   },
+//   detailText: {
+//     fontSize: 14,
+//     color: "#666",
+//     marginBottom: 5,
+//   },
+// });
+
+// export default CalendarScreen;
+
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -1440,13 +1872,14 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   SafeAreaView,
+  RefreshControl,
 } from "react-native";
 import { CalendarList } from "react-native-calendars";
 import { getFirestore, doc, getDoc, Timestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { addDays, format, isBefore, isAfter, isEqual } from "date-fns";
-import { parseISO } from "date-fns/parseISO";
-//import { addDays, format, isBefore, isAfter, parseISO, isEqual } from "date-fns";
+// Fix import for Refresh icon
+import { RefreshCw } from "lucide-react-native"; // Changed from Refresh to RefreshCw which is more likely to exist
 
 const db = getFirestore();
 const auth = getAuth();
@@ -1468,6 +1901,7 @@ const CalendarScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [cycleData, setCycleData] = useState<UserCycleData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [markedDates, setMarkedDates] = useState<Record<string, any>>({});
   const [user, setUser] = useState<any>(null);
 
@@ -1484,38 +1918,48 @@ const CalendarScreen: React.FC = () => {
     return unsubscribe;
   }, []);
 
-  // Fetch cycle data when user is available
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchCycleData = async () => {
-      try {
-        setLoading(true);
-        const cycleRef = doc(db, "cycles", user.uid);
-        const docSnap = await getDoc(cycleRef);
-        if (docSnap.exists()) {
-          setCycleData(docSnap.data() as UserCycleData);
-        } else {
-          console.log("No cycle data found");
-        }
-      } catch (error) {
-        console.error("Error fetching cycle data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCycleData();
-  }, [user]);
-
-  // Convert Firestore Timestamp to Date
-  const toDate = (timestamp: Timestamp | Date | null | undefined): Date => {
-    if (!timestamp) return new Date();
+  // Convert Firestore Timestamp to Date with null handling
+  const toDate = (timestamp: Timestamp | Date | null | undefined): Date | null => {
+    if (!timestamp) return null;
     if (timestamp instanceof Timestamp) {
       return timestamp.toDate();
     }
     return timestamp instanceof Date ? timestamp : new Date(timestamp);
   };
+
+  // Fetch cycle data when user is available
+  const fetchCycleData = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const cycleRef = doc(db, "cycles", user.uid);
+      const docSnap = await getDoc(cycleRef);
+      if (docSnap.exists()) {
+        setCycleData(docSnap.data() as UserCycleData);
+      } else {
+        console.log("No cycle data found");
+      }
+    } catch (error) {
+      console.error("Error fetching cycle data:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user]);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchCycleData();
+  }, [fetchCycleData]);
+
+  // Handle refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchCycleData();
+  }, [fetchCycleData]);
+
+  const parseISO = (dateString: string): Date => new Date(dateString);
 
   // Calculate and set marked dates
   useEffect(() => {
@@ -1526,6 +1970,7 @@ const CalendarScreen: React.FC = () => {
     const periodLength = cycleData?.periodLength || 5;
     const cycleLength = cycleData?.cycleLength || 28;
 
+    // Mark today
     marked[format(today, "yyyy-MM-dd")] = {
       customStyles: {
         container: {
@@ -1539,49 +1984,37 @@ const CalendarScreen: React.FC = () => {
       },
     };
 
-
     // Get dates from cycle data
     const lastPeriod1 = toDate(cycleData.lastPeriodDate1);
-    const lastPeriod2 = cycleData.lastPeriodDate2 ? toDate(cycleData.lastPeriodDate2) : null;
+    const lastPeriod2 = toDate(cycleData.lastPeriodDate2);
 
-    // Mark past periods (from lastPeriodDate2 if available)
-    // Update your date comparison logic in the marked dates useEffect:
-if (lastPeriod2) {
-  const periodEndDate2 = addDays(lastPeriod2, periodLength);
-  let currentDate = new Date(lastPeriod2);
-  
-  // Include equality checks
-  while (isBefore(currentDate, periodEndDate2) || isEqual(currentDate, periodEndDate2)) {
-    const dateStr = format(currentDate, "yyyy-MM-dd");
-    marked[dateStr] = {
-      customStyles: {
-        container: {
-          backgroundColor: "#FFC0CB", // Red for current period
-          borderRadius: 16,
-        },
-        text: {
-          color: "black",
-        },
-      },
-    };
-    currentDate = addDays(currentDate, 1);
-  }
-}
+    if (!lastPeriod1) return; // Safety check
 
-    // Current period (from lastPeriodDate1)
-    const periodEndDate1 = addDays(lastPeriod1, cycleData.periodLength);
-    if (isBefore(today, periodEndDate1)) {
+    // Check if today is within current period (lastPeriodDate1)
+    const currentPeriodEndDate = addDays(lastPeriod1, periodLength - 1);
+    
+    // This variable is now used to conditionally apply styling or logic
+    const isCurrentPeriod = !isBefore(today, lastPeriod1) && !isAfter(today, currentPeriodEndDate);
+
+    // Mark current period (from lastPeriodDate1)
+    if (lastPeriod1) {
       let currentDate = new Date(lastPeriod1);
-      while (isBefore(currentDate, periodEndDate1)) {
+      while (!isAfter(currentDate, currentPeriodEndDate)) {
         const dateStr = format(currentDate, "yyyy-MM-dd");
         marked[dateStr] = {
           customStyles: {
             container: {
-              backgroundColor: "#FF3B30", // Red for current period
+              // Use a slightly different red if it's the current period day that includes today
+              backgroundColor: isCurrentPeriod && isEqual(format(currentDate, "yyyy-MM-dd"), format(today, "yyyy-MM-dd")) 
+                ? "#FF1A1A" // Brighter red for today if it's in period
+                : "#FF3B30", // Normal red for other period days
               borderRadius: 16,
             },
             text: {
               color: "white",
+              fontWeight: isCurrentPeriod && isEqual(format(currentDate, "yyyy-MM-dd"), format(today, "yyyy-MM-dd")) 
+                ? "bold" 
+                : "normal",
             },
           },
         };
@@ -1589,11 +2022,34 @@ if (lastPeriod2) {
       }
     }
 
-    // Ovulation (pale blue)
-    const nextPeriodStart = addDays(lastPeriod1, cycleData.cycleLength);
+    // Mark past period (from lastPeriodDate2)
+    if (lastPeriod2) {
+      const pastPeriodEndDate = addDays(lastPeriod2, periodLength - 1);
+      let currentDate = new Date(lastPeriod2);
+      
+      while (!isAfter(currentDate, pastPeriodEndDate)) {
+        const dateStr = format(currentDate, "yyyy-MM-dd");
+        marked[dateStr] = {
+          customStyles: {
+            container: {
+              backgroundColor: "#FFC0CB", // Light pink for past period
+              borderRadius: 16,
+            },
+            text: {
+              color: "black",
+            },
+          },
+        };
+        currentDate = addDays(currentDate, 1);
+      }
+    }
+
+    // Mark ovulation (blue)
+    const nextPeriodStart = addDays(lastPeriod1, cycleLength);
     const ovulationStart = addDays(nextPeriodStart, -14);
     const ovulationEnd = addDays(ovulationStart, 3);
     let currentDate = new Date(ovulationStart);
+    
     while (isBefore(currentDate, ovulationEnd)) {
       const dateStr = format(currentDate, "yyyy-MM-dd");
       marked[dateStr] = {
@@ -1610,12 +2066,13 @@ if (lastPeriod2) {
       currentDate = addDays(currentDate, 1);
     }
 
-    // Upcoming periods (next 3 cycles - light pink background)
+    // Mark future periods (next 3 cycles)
     for (let i = 1; i <= 3; i++) {
-      const periodStart = addDays(lastPeriod1, cycleData.cycleLength * i);
-      const periodEnd = addDays(periodStart, cycleData.periodLength);
+      const periodStart = addDays(lastPeriod1, cycleLength * i);
+      const periodEnd = addDays(periodStart, periodLength - 1);
       let currentDate = new Date(periodStart);
-      while (isBefore(currentDate, periodEnd)) {
+      
+      while (!isAfter(currentDate, periodEnd)) {
         const dateStr = format(currentDate, "yyyy-MM-dd");
         marked[dateStr] = {
           customStyles: {
@@ -1643,55 +2100,58 @@ if (lastPeriod2) {
     if (!selectedDate || !cycleData) return null;
 
     const date = parseISO(selectedDate);
-    let details = [];
+    const details = [];
+    const today = new Date();
 
     const lastPeriod1 = toDate(cycleData.lastPeriodDate1);
-    const lastPeriod2 = cycleData.lastPeriodDate2 ? toDate(cycleData.lastPeriodDate2) : null;
+    const lastPeriod2 = toDate(cycleData.lastPeriodDate2);
 
-    // Check if it's in past period (lastPeriodDate2)
-    if (lastPeriod2) {
-      const periodEndDate2 = addDays(lastPeriod2, cycleData.periodLength);
-      if (isAfter(date, lastPeriod2) && isBefore(date, periodEndDate2)) {
-        details.push("Past menstrual day");
-      }
+    if (!lastPeriod1) return null;
+
+    // Check if it's in current period
+    const currentPeriodEndDate = addDays(lastPeriod1, cycleData.periodLength - 1);
+    if (!isBefore(date, lastPeriod1) && !isAfter(date, currentPeriodEndDate)) {
+      details.push("Current menstrual period");
     }
 
-    // Check if it's in current period (lastPeriodDate1)
-    const periodEndDate1 = addDays(lastPeriod1, cycleData.periodLength);
-    if (isAfter(date, lastPeriod1) && isBefore(date, periodEndDate1)) {
-      details.push("Current menstrual day");
+    // Check if it's in past period
+    if (lastPeriod2) {
+      const pastPeriodEndDate = addDays(lastPeriod2, cycleData.periodLength - 1);
+      if (!isBefore(date, lastPeriod2) && !isAfter(date, pastPeriodEndDate)) {
+        details.push("Past menstrual period");
+      }
     }
 
     // Check if it's an ovulation day
     const nextPeriodStart = addDays(lastPeriod1, cycleData.cycleLength);
     const ovulationStart = addDays(nextPeriodStart, -14);
     const ovulationEnd = addDays(ovulationStart, 3);
-    if (isAfter(date, ovulationStart) && isBefore(date, ovulationEnd)) {
+    if (!isBefore(date, ovulationStart) && !isAfter(date, ovulationEnd)) {
       details.push("Ovulation window");
     }
 
     // Check if it's an upcoming period day
     for (let i = 1; i <= 3; i++) {
       const periodStart = addDays(lastPeriod1, cycleData.cycleLength * i);
-      const periodEnd = addDays(periodStart, cycleData.periodLength);
-      if (isAfter(date, periodStart) && isBefore(date, periodEnd)) {
-        details.push(`Predicted period day (Cycle ${i})`);
+      const periodEnd = addDays(periodStart, cycleData.periodLength - 1);
+      if (!isBefore(date, periodStart) && !isAfter(date, periodEnd)) {
+        details.push(`Predicted period (Cycle ${i})`);
         break;
       }
     }
 
-    // return (
-    //   <View style={styles.detailsContainer}>
-    //     <Text style={styles.detailsTitle}>{format(date, "MMMM do, yyyy")}</Text>
-    //     {details.length > 0 ? (
-    //       details.map((detail, index) => (
-    //         <Text key={index} style={styles.detailText}>• {detail}</Text>
-    //       ))
-    //     ) : (
-    //       <Text style={styles.detailText}>No cycle events this day</Text>
-    //     )}
-    //   </View>
-    // );
+    return (
+      <View style={styles.detailsContainer}>
+        <Text style={styles.detailsTitle}>{format(date, "MMMM do, yyyy")}</Text>
+        {details.length > 0 ? (
+          details.map((detail, index) => (
+            <Text key={index} style={styles.detailText}>• {detail}</Text>
+          ))
+        ) : (
+          <Text style={styles.detailText}>No cycle events this day</Text>
+        )}
+      </View>
+    );
   };
 
   if (loading) {
@@ -1713,21 +2173,29 @@ if (lastPeriod2) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Your Cycle Calendar</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Your Cycle Calendar</Text>
+        <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
+          {/* Changed from Refresh to RefreshCw which is more likely to exist */}
+          <RefreshCw size={24} color="#4B0082" />
+        </TouchableOpacity>
+      </View>
+      
       <View style={styles.calendarContainer}>
-        {/* Use CalendarList with vertical scrolling */}
         <CalendarList
           onDayPress={onDayPress}
           markedDates={markedDates}
           markingType={"custom"}
-          // Increase these values for more "infinite" scrolling
-          pastScrollRange={24} // Allow scrolling back 24 months (2 years)
-          futureScrollRange={24} // Allow scrolling forward 24 months (2 years)
+          pastScrollRange={24}
+          futureScrollRange={24}
           scrollEnabled={true}
           showScrollIndicator={true}
-          calendarHeight={330} // Fixed height for calendar
-          horizontal={false} // Vertical scrolling
-          pagingEnabled={false} // Disable paging for smoother vertical scroll
+          calendarHeight={330}
+          horizontal={false}
+          pagingEnabled={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           theme={{
             backgroundColor: "#ffffff",
             calendarBackground: "#ffffff",
@@ -1793,12 +2261,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#4B0082",
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 15,
+    paddingHorizontal: 20,
+  },
   header: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
-    marginVertical: 20,
     color: "#4B0082",
+    flex: 1,
+  },
+  refreshButton: {
+    padding: 8,
   },
   calendarContainer: {
     flex: 1,
@@ -1824,14 +2302,14 @@ const styles = StyleSheet.create({
   legendContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between", // changed from "space-around"
-    paddingHorizontal: 10, // reduced from 20
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
   },
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 5,
-    width: '48%', // limit to 2 items per row
+    width: '48%',
   },
   legendColor: {
     width: 16,
@@ -1847,7 +2325,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderTopWidth: 1,
     borderTopColor: "#ddd",
-    marginBottom: 100, // Increased margin to ensure content isn't hidden by the legend
+    marginBottom: 100,
   },
   detailsTitle: {
     fontSize: 18,

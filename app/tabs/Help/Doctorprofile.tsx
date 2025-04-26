@@ -686,6 +686,7 @@ import {
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../FirebaseConfig';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Doctor {
   id: string;
@@ -794,6 +795,7 @@ const DoctorProfileScreen = () => {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Image
@@ -822,6 +824,7 @@ const DoctorProfileScreen = () => {
         <Text style={styles.bookButtonText}>Book an Appointment</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 

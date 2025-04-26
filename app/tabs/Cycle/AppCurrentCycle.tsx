@@ -1456,6 +1456,809 @@
 
 // export default AppCurrentCycle;
 
+//import React, { useState, useEffect, useRef } from 'react';
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   Dimensions,
+//   TouchableOpacity,
+//   Animated,
+//   Easing,
+//   ActivityIndicator,
+//   Alert,
+//   ScrollView,
+//   SafeAreaView,
+// } from 'react-native';
+// import { Flame, Settings } from 'lucide-react-native';
+// import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
+// interface CycleTrackerProps {
+//   userId: string;
+// }
+// import { useRouter } from 'expo-router';
+
+// interface UserCycleData {
+//   userId: string;
+//   lastPeriodDate1: Timestamp | Date;
+//   lastPeriodDate2: Timestamp | Date;
+//   periodLength: number;
+//   cycleLength: number;
+//   currentCycleDay?: number;
+//   currentPhase?: string;
+//   predictedNextPeriodDate?: Timestamp | Date;
+//   predictedOvulationDate?: Timestamp | Date;
+//   trackedDays?: number[];
+//   streak?: number;
+//   isProfileComplete?: boolean;
+//   createdAt?: Timestamp | Date;
+//   lastUpdated?: Timestamp | Date;
+// }
+// interface PhaseInfo {
+//   description: string;
+//   phase: 'menstruation' | 'ovulation' | 'fertile' | 'follicular' | 'luteal';
+//   icon: string;
+//   tips: string;
+// }
+// const screenWidth = Dimensions.get('window').width;
+// const circleSize = screenWidth * 0.8;
+// const circleRadius = circleSize / 2;
+
+// const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
+//   const [userData, setUserData] = useState<UserCycleData | null>(null);
+//   const [currentDay, setCurrentDay] = useState(1);
+//   const [currentPhase, setCurrentPhase] = useState<string>('');
+//   const [cycleLength, setCycleLength] = useState(28);
+//   const [periodLength, setPeriodLength] = useState(5);
+//   const [nextPeriod, setNextPeriod] = useState<Date | null>(null);
+//   const [ovulationDate, setOvulationDate] = useState<Date | null>(null);
+//   const [streak, setStreak] = useState(0);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState<string | null>(null);
+//   const [trackedDays, setTrackedDays] = useState<number[]>([]);
+//   const [cycleDocId, setCycleDocId] = useState<string | null>(null);
+//   const router = useRouter();
+  
+//   // Use useRef for the animated value
+//   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+//   // Setup pulse animation
+//   useEffect(() => {
+//     const pulseAnimation = Animated.loop(
+//       Animated.sequence([
+//         Animated.timing(pulseAnim, {
+//           toValue: 1.3,
+//           duration: 1000,
+//           easing: Easing.ease,
+//           useNativeDriver: true,
+//         }),
+//         Animated.timing(pulseAnim, {
+//           toValue: 1,
+//           duration: 1000,
+//           easing: Easing.ease,
+//           useNativeDriver: true,
+//         }),
+//       ]),
+//     );
+
+//     pulseAnimation.start();
+
+//     return () => {
+//       pulseAnimation.stop();
+//     };
+//   }, [pulseAnim]);
+    
+//   // Calculate next period date based on the most recent period and cycle length
+//   const calculateNextPeriodDate = (userData: UserCycleData): Date => {
+//     // Determine most recent period date
+//     let lastPeriod1: Date;
+//     let lastPeriod2: Date;
+    
+//     // Convert Firestore Timestamp to Date if needed
+//     if (userData.lastPeriodDate1 instanceof Timestamp) {
+//       lastPeriod1 = userData.lastPeriodDate1.toDate();
+//     } else {
+//       lastPeriod1 = new Date(userData.lastPeriodDate1);
+//     }
+    
+//     if (userData.lastPeriodDate2 instanceof Timestamp) {
+//       lastPeriod2 = userData.lastPeriodDate2.toDate();
+//     } else {
+//       lastPeriod2 = new Date(userData.lastPeriodDate2);
+//     }
+    
+//     const mostRecentDate = lastPeriod1 > lastPeriod2 ? lastPeriod1 : lastPeriod2;
+//     const nextPeriod = new Date(mostRecentDate);
+//     nextPeriod.setDate(nextPeriod.getDate() + userData.cycleLength);
+//     return nextPeriod;
+//   };
+
+//   // Calculate ovulation date (typically 14 days before next period)
+//   const calculateOvulationDate = (nextPeriodDate: Date): Date => {
+//     const ovulation = new Date(nextPeriodDate);
+//     ovulation.setDate(ovulation.getDate() - 14); // Standard luteal phase is ~14 days
+//     return ovulation;
+//   };
+
+//   const calculateCurrentCycleInfo = (userData: UserCycleData) => {
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0); // Normalize to midnight
+  
+//     // Convert Firestore Timestamp to Date if needed
+//     const lastPeriodDate = userData.lastPeriodDate1 instanceof Timestamp 
+//       ? userData.lastPeriodDate1.toDate() 
+//       : new Date(userData.lastPeriodDate1);
+//     lastPeriodDate.setHours(0, 0, 0, 0); // Normalize to midnight
+  
+//     // If period was logged today, trust the manual `currentCycleDay: 1`
+//     if (lastPeriodDate.getTime() === today.getTime()) {
+//       return {
+//         currentCycleDay: 1,
+//         currentPhase: "Menstrual Phase",
+//       };
+//     }
+  
+//     // Otherwise, calculate as usual
+//     const diffTime = Math.abs(today.getTime() - lastPeriodDate.getTime());
+//     let cycleDayCalculated = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  
+//     // Adjust if beyond cycle length
+//     if (cycleDayCalculated > userData.cycleLength) {
+//       cycleDayCalculated = cycleDayCalculated % userData.cycleLength;
+//       if (cycleDayCalculated === 0) cycleDayCalculated = userData.cycleLength;
+//     }
+  
+//     // Determine phase
+//     let phase = "";
+//     if (cycleDayCalculated <= userData.periodLength) {
+//       phase = "Menstrual Phase";
+//     } else if (cycleDayCalculated <= userData.cycleLength - 14) {
+//       phase = "Follicular Phase";
+//     } else if (cycleDayCalculated <= userData.cycleLength - 10) {
+//       phase = "Ovulatory Phase";
+//     } else {
+//       phase = "Luteal Phase";
+//     }
+  
+//     return { currentCycleDay: cycleDayCalculated, currentPhase: phase };
+//   };
+//   // Calculate streak based on tracked days
+//   const calculateStreak = (trackedDays: number[]) => {
+//     if (!trackedDays || trackedDays.length === 0) return 0;
+    
+//     const sortedDays = [...trackedDays].sort((a, b) => a - b);
+//     let streak = 1;
+    
+//     for (let i = 1; i < sortedDays.length; i++) {
+//       if (sortedDays[i] === sortedDays[i - 1] + 1) {
+//         streak++;
+//       } else if (sortedDays[i] !== sortedDays[i - 1]) {
+//         streak = 1;
+//       }
+//     }
+    
+//     return streak;
+//   };
+
+//   // Fetch user data from Firestore - UPDATED to handle multiple data locations
+//   const fetchUserData = async () => {
+//     if (!userId) {
+//       setError('User ID is required');
+//       setLoading(false);
+//       return;
+//     }
+
+//     try {
+//       setLoading(true);
+//       setError(null);
+//       console.log("Fetching cycle data for user:", userId);
+
+//       const db = getFirestore();
+      
+      
+//       // First attempt: Look in cycles collection where userId field matches
+//       const cyclesRef = collection(db, "cycles");
+//       const q = query(cyclesRef, where("userId", "==", userId));
+//       const querySnapshot = await getDocs(q);
+      
+//       console.log("Cycles collection query results:", {
+//         empty: querySnapshot.empty,
+//         count: querySnapshot.size
+//       });
+      
+//       if (!querySnapshot.empty) {
+//         // Use the first document found
+//         const cycleDoc = querySnapshot.docs[0];
+//         const data = cycleDoc.data() as UserCycleData;
+//         setUserData(data);
+//         setCycleDocId(cycleDoc.id); // Store document ID for updates
+        
+//         processUserData(data, cycleDoc.id);
+//         return;
+//       }
+      
+//       // Second attempt: Try looking directly in users collection
+//       console.log("No data in cycles collection, checking users collection");
+//       const userRef = doc(db, "users", userId);
+//       const userSnap = await getDoc(userRef);
+      
+//       if (userSnap.exists() && userSnap.data().lastPeriodDate1) {
+//         const userData = userSnap.data() as UserCycleData;
+//         setUserData(userData);
+        
+//         // Also store this data in cycles collection for future access
+//         const newCycleRef = await addDoc(collection(db, "cycles"), {
+//           ...userData,
+//           userId,
+//           createdAt: new Date(),
+//           lastUpdated: new Date()
+//         });
+        
+//         setCycleDocId(newCycleRef.id);
+//         processUserData(userData, newCycleRef.id);
+//         return;
+//       }
+      
+//       // No data found
+//       console.log("No cycle data found in any location");
+//       setUserData(null);
+      
+//     } catch (error) {
+//       console.error('Error loading user data:', error);
+//       setError('Failed to load cycle data. Please try again.');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+  
+//   // Helper function to process user data after fetching
+//   const processUserData = async (data: UserCycleData, docId: string) => {
+//     // Set cycle properties
+//     setCycleLength(data.cycleLength || 28);
+//     setPeriodLength(data.periodLength || 5);
+//     setTrackedDays(data.trackedDays || []);
+    
+//     // Get streak from data or calculate it
+//     setStreak(data.streak || calculateStreak(data.trackedDays || []));
+    
+//     // Calculate predictions
+//     const nextPeriodDate = calculateNextPeriodDate(data);
+//     const ovulationDate = calculateOvulationDate(nextPeriodDate);
+//     setNextPeriod(nextPeriodDate);
+//     setOvulationDate(ovulationDate);
+    
+//     // Calculate current day and phase
+//     const { currentCycleDay, currentPhase } = calculateCurrentCycleInfo(data);
+//     setCurrentDay(currentCycleDay);
+//     setCurrentPhase(currentPhase);
+    
+//     const db = getFirestore();
+    
+//     // Update the document with calculated values
+//     try {
+//       if (docId) {
+//         const cycleRef = doc(db, "cycles", docId);
+//         await updateDoc(cycleRef, {
+//           predictedNextPeriodDate: nextPeriodDate,
+//           predictedOvulationDate: ovulationDate,
+//           currentCycleDay,
+//           currentPhase,
+//           lastUpdated: new Date()
+//         });
+//       }
+//     } catch (error) {
+//       console.error("Error updating calculated values:", error);
+//       // Non-blocking error - don't show to user
+//     }
+//   };
+
+//   // Load data on component mount
+//   useEffect(() => {
+//     fetchUserData();
+//   }, [userId]);
+
+//   // Handle navigation to symptom tracker
+//   const navigateToSymptomTracker = () => {
+//     router.push("/tabs/Cycle/SymtompTrackerScreen");
+//   };
+
+//   const logPeriod = async () => {
+//     if (!userId || !cycleDocId) {
+//       Alert.alert('Error', 'User data not loaded');
+//       return;
+//     }
+  
+//     try {
+//       const today = new Date();
+//       today.setHours(0, 0, 0, 0); // Normalize to midnight UTC
+  
+//       const db = getFirestore();
+//       const cycleRef = doc(db, "cycles", cycleDocId);
+//       const currentData = (await getDoc(cycleRef)).data() as UserCycleData;
+  
+//       await updateDoc(cycleRef, {
+//         lastPeriodDate2: currentData.lastPeriodDate1 || Timestamp.fromDate(today),
+//         lastPeriodDate1: Timestamp.fromDate(today),
+//         currentCycleDay: 1, // Force Day 1
+//         currentPhase: "Menstrual Phase",
+//         lastUpdated: Timestamp.now(),
+//         trackedDays: [...new Set([...(currentData.trackedDays || []), 1])],
+//       });
+ 
+//       setCurrentDay(1);
+//       setCurrentPhase("Menstrual Phase");
+//       await fetchUserData(); // Sync with Firestore
+  
+//       Alert.alert('Success', 'New period logged! Cycle reset to day 1.');
+//     } catch (error) {
+//       console.error('Error logging period:', error);
+//       Alert.alert('Error', 'Failed to log period');
+//     }
+//   };
+
+//   if (loading) {
+//     return (
+//       <View style={styles.centeredContainer}>
+//         <ActivityIndicator size="large" color="#6C63FF" />
+//         <Text style={styles.loadingText}>Loading your cycle data...</Text>
+//       </View>
+//     );
+//   }
+
+//   if (error) {
+//     return (
+//       <ScrollView contentContainerStyle={styles.centeredContainer}>
+//         <Text style={styles.errorText}>{error}</Text>
+//         <TouchableOpacity style={styles.button} onPress={fetchUserData}>
+//           <Text style={styles.buttonText}>Retry</Text>
+//         </TouchableOpacity>
+//       </ScrollView>
+//     );
+//   }
+
+//   if (!userData) {
+//     return (
+//       <ScrollView contentContainerStyle={styles.centeredContainer}>
+//         <Text style={styles.noCycleText}>No period data found</Text>
+//         <Text style={styles.errorText}>Please add your period information to get started</Text>
+//       </ScrollView>
+//     );
+//   }
+
+//   const renderDayMarkers = () => {
+//     // Calculate ovulation day - typically 14 days before next period
+//     const ovulationDay = cycleLength - 14;
+//     const periodDays = Array.from({ length: periodLength }, (_, i) => i + 1);
+//     const fertileDays = Array.from({ length: 7 }, (_, i) => ovulationDay - 3 + i);
+//     const ovulationDays = [ovulationDay - 1, ovulationDay, ovulationDay + 1];
+
+//     return Array.from({ length: cycleLength }).map((_, day) => {
+//       const dayNum = day + 1;
+//       const angle = (day / cycleLength) * 2 * Math.PI - Math.PI / 2;
+//       const x = circleRadius * 0.8 * Math.cos(angle) + circleRadius - 10;
+//       const y = circleRadius * 0.8 * Math.sin(angle) + circleRadius - 10;
+
+//       const isCurrentDay = dayNum === currentDay;
+//       const isPeriod = periodDays.includes(dayNum);
+//       const isOvulation = ovulationDays.includes(dayNum);
+//       const isFertile = fertileDays.includes(dayNum);
+//       const isTracked = trackedDays?.includes(dayNum) || false;
+
+//       return (
+//         <Animated.View
+//           key={day}
+//           style={[
+//             styles.dayMarker,
+//             {
+//               left: x,
+//               top: y,
+//               backgroundColor: isPeriod
+//                 ? '#FF6B6B' // Purple for period
+//                 : isOvulation
+//                 ? '#4A90E2' // Pink for ovulation
+//                 : isFertile
+//                 ? '#7ED321' // Light purple for fertile
+//                 : '#CBD5E1', // Gray for other days
+//               zIndex: isCurrentDay ? 1 : 0,
+//               // Add a border for tracked days
+//               borderWidth: isTracked ? 2 : 0,
+//               borderColor: isTracked ? 'white' : 'transparent',
+//             },
+//           ]}
+//         >
+//           {isCurrentDay && (
+//             <View style={styles.currentDayRing}>
+//               <Text style={styles.currentDayText}>{dayNum}</Text>
+//             </View>
+//           )}
+//         </Animated.View>
+//       );
+//     });
+//   };
+
+//   // Format dates for display
+//   const formatDate = (date: Date | null) => {
+//     if (!date) return "N/A";
+//     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+//   };
+
+  
+//   const phaseInfo: PhaseInfo = ((): PhaseInfo => {  // Explicit return type
+//     const ovulationDay = cycleLength - 14;
+//     const ovulationDays = [ovulationDay - 1, ovulationDay, ovulationDay + 1];
+//     const fertileDays = Array.from({ length: 7 }, (_, i) => ovulationDay - 3 + i);
+  
+//     if (currentDay <= periodLength) {
+//       return {
+//         description: "You are in your menstrual phase.This is when your uterine lining sheds.",
+//         phase: 'menstruation' as const,  // Use 'as const' to lock the type
+//         icon: '🩸',
+//         tips: "Rest and hydrate."
+//       };
+//     } else if (ovulationDays.includes(currentDay)) {
+//       return {
+//         description: "You're likely ovulating today. This is when an egg is released from your ovary.",
+//         phase: 'ovulation' as const,
+//         icon: '🥚',
+//         tips: "This is your most fertile time if trying to conceive."
+//       };
+//     } else if (fertileDays.includes(currentDay)) {
+//       return {
+//         description: "You're in your fertile window. Chances of pregnancy are higher during these days.",
+//         phase: 'fertile' as const,
+//         icon: '📈',
+//         tips: "Have regular intercourse if trying to conceive."
+//       };
+//     } else if (currentDay < fertileDays[0]) {
+//       return {
+//         description: "You're in your follicular phase. Your body is preparing an egg for release.",
+//         phase: 'follicular' as const,
+//         icon: '🌱',
+//         tips: "Energy levels are typically higher now."
+//       };
+//     } else {
+//       return {
+//         description: "You're in your luteal phase. Your body is preparing for a potential period.",
+//         phase: 'luteal' as const,
+//         icon: '🌙',
+//         tips: "Watch for PMS symptoms in the coming days."
+//       };
+//     }
+//   })();
+  
+  
+//   return (
+//       <SafeAreaView style={styles.safeArea}>
+//         {/* New Header */}
+//         <View style={styles.header}>
+//           <Text style={styles.headerTitle}>Your Current Cycle</Text>
+//           <TouchableOpacity 
+//             style={styles.settingsButton}
+//             onPress={() => router.push("/authentication/settings")} // Or your settings route
+//           >
+//             <Settings size={24} color="#333" />
+//           </TouchableOpacity>
+//         </View>
+  
+//         <ScrollView contentContainerStyle={styles.container}>
+//           {/* Removed the title and phase text from here */}
+          
+//           {/* Streak display - moved below header */}
+//           {streak > 0 && (
+//             <View style={styles.streakContainer}>
+//               <Flame color={streak > 3 ? 'orange' : 'gray'} size={24} />
+//               <Text style={styles.streakHeading}>
+//                 {streak} day{streak !== 1 ? 's' : ''} streak
+//               </Text>
+//             </View>
+//           )}
+  
+//           <View style={styles.circleContainer}>
+//             {/* Cycle day and phase inside the circle */}
+//             <View style={styles.cycleInfoCenter}>
+//               <Text style={styles.cycleDayText}>Day {currentDay} of {cycleLength} </Text>
+//               <Text style={styles.cyclePhaseText}>{currentPhase}</Text> 
+//             </View>
+//             {renderDayMarkers()}
+//           </View>
+  
+//           {/* Rest of your existing UI remains the same */}
+//           <View style={styles.legendContainer}>
+//             <View style={styles.legendItem}>
+//               <View style={[styles.legendDot, { backgroundColor: '#8B5CF6' }]} />
+//               <Text style={styles.legendText}>Period</Text>
+//             </View>
+//             <View style={styles.legendItem}>
+//               <View style={[styles.legendDot, { backgroundColor: '#F472B6' }]} />
+//               <Text style={styles.legendText}>Ovulation</Text>
+//             </View>
+//             <View style={styles.legendItem}>
+//               <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
+//               <Text style={styles.legendText}>Fertile</Text>
+//             </View>
+//           </View>
+
+//           {/* Phase Description */}
+// <View style={styles.phaseDescriptionContainer}>
+//   <View style={styles.phaseHeader}>
+//     <Text style={styles.phaseIcon}>{phaseInfo.icon}</Text>
+//     <Text style={styles.phaseDescriptionTitle}>Today's Phase</Text>
+//   </View>
+//   <Text style={[
+//     styles.phaseDescriptionText,
+//     styles[`${phaseInfo.phase}Phase` as keyof typeof styles]
+//   ]}>
+//     {phaseInfo.description}
+//   </Text>
+//   <Text style={styles.phaseTips}>{phaseInfo.tips}</Text>
+// </View>
+        
+//           <TouchableOpacity 
+//             style={[styles.button, { backgroundColor: '#FF3B30' }]} 
+//             onPress={logPeriod}>
+//             <Text style={styles.buttonText}>Log Period Start</Text>
+//           </TouchableOpacity>
+          
+//           <View style={styles.buttonContainer}>
+//             <TouchableOpacity style={styles.button} onPress={navigateToSymptomTracker}>
+//               <Text style={styles.buttonText}>Log Your Symptoms</Text>
+//             </TouchableOpacity>
+//           </View>
+//         </ScrollView>
+//       </SafeAreaView>
+//     );
+//   };
+  
+//   const styles = StyleSheet.create({
+//     safeArea: {
+//       flex: 1,
+//       backgroundColor: '#FFF',
+//     },
+//     header: {
+//       flexDirection: 'row',
+//       justifyContent: 'center',
+//       alignItems: 'center',
+//       paddingHorizontal: 20,
+//       paddingVertical: 15,
+//       //borderBottomWidth: 1,
+//       borderBottomColor: '#E5E7EB',
+//     },
+//     headerTitle: {
+//       fontSize: 22,
+//       fontWeight: 'bold',
+//       textAlign: 'center',
+//       flex: 1, // this will help center the text in the row
+//     },
+//     settingsButton: {
+//       padding: 8,
+//       position: 'absolute',
+//     right: 16,
+//     top: '50%',
+//     transform: [{ translateY: -12 }], // vertical alignment adjustment
+//     },
+//     cycleInfoCenter: {
+//       position: 'absolute',
+//       zIndex: 2,
+//       alignItems: 'center',
+//     },
+//     cycleDayText: {
+//       fontSize: 24,
+//       fontWeight: 'bold',
+//       color: '#333',
+//       marginBottom: 4,
+//     },
+//     cyclePhaseText: {
+//       fontSize: 16,
+//       color: '#4B0082',
+//       textAlign: 'center',
+//       maxWidth: circleSize * 0.6,
+//     },
+//     // ... keep all your existing styles below ...
+//     container: {
+//       flexGrow: 1,
+//       padding: 20,
+//       backgroundColor: '#ffffff',
+//     },
+//     centeredContainer: {
+//       flexGrow: 1,
+//       justifyContent: 'center',
+//       alignItems: 'center',
+//       padding: 20,
+//       backgroundColor: '#FFFBEB',
+//     },
+//     title: {
+//       fontSize: 22,
+//       fontWeight: 'bold',
+//       color: '#333',
+//       textAlign: 'center',
+//       marginBottom: 5,
+//     },
+//     phaseText: {
+//       fontSize: 18,
+//       color: '#FF6B6B',
+//       textAlign: 'center',
+//       marginBottom: 10,
+//     },
+//     cycleInfoCards: {
+//       flexDirection: 'row',
+//       justifyContent: 'space-between',
+//       marginBottom: 20,
+//     },
+//     infoCard: {
+//       flex: 1,
+//       backgroundColor: 'rgba(0, 0, 0, 0.1)',
+//       borderRadius: 10,
+//       padding: 12,
+//       margin: 5,
+//       alignItems: 'center',
+//     },
+//     infoLabel: {
+//       color: '#666',
+//       fontSize: 14,
+//       marginBottom: 4,
+//     },
+//     infoValue: {
+//       color: '#333',
+//       fontSize: 16,
+//       fontWeight: 'bold',
+//     },
+//     streakContainer: {
+//       flexDirection: 'row',
+//       alignItems: 'center',
+//       justifyContent: 'center',
+//       padding: 10,
+//       backgroundColor: 'rgba(0, 0, 0, 0.1)',
+//       borderRadius: 10,
+//       marginBottom: 15,
+//     },
+//     streakHeading: {
+//       color: '#333',
+//       fontWeight: 'bold',
+//       fontSize: 16,
+//       marginLeft: 8,
+//     },
+//     circleContainer: {
+//       width: circleSize,
+//       height: circleSize,
+//       borderRadius: circleSize / 2,
+//       alignSelf: 'center',
+//       position: 'relative',
+//       marginBottom: 20,
+//       justifyContent: 'center',
+//       alignItems: 'center',
+//     },
+//     dayMarker: {
+//       width: 20,
+//       height: 20,
+//       borderRadius: 10,
+//       position: 'absolute',
+//       alignItems: 'center',
+//       justifyContent: 'center',
+//     },
+//     currentDayRing: {
+//       width: 30,
+//       height: 30,
+//       borderRadius: 15,
+//       borderWidth: 2,
+//       borderColor: '#333',
+//       alignItems: 'center',
+//       justifyContent: 'center',
+//       backgroundColor: 'rgba(0, 0, 0, 0.2)',
+//     },
+//     currentDayText: {
+//       color: '#333',
+//       fontWeight: 'bold',
+//       fontSize: 12,
+//     },
+//     buttonContainer: {
+//       marginTop: 20,
+//       gap: 10,
+//     },
+//     button: {
+//       backgroundColor: '#FF6B6B',
+//       padding: 15,
+//       borderRadius: 10,
+//       alignItems: 'center',
+//       justifyContent: 'center',
+//       flexDirection: 'row',
+//     },
+//     buttonText: {
+//       color: '#fff',
+//       fontWeight: 'bold',
+//       fontSize: 16,
+//     },
+//     loadingText: {
+//       color: '#333',
+//       marginTop: 10,
+//     },
+//     errorText: {
+//       color: '#FF6B6B',
+//       textAlign: 'center',
+//       marginBottom: 20,
+//     },
+//     noCycleText: {
+//       color: '#333',
+//       fontSize: 18,
+//       marginBottom: 10,
+//     },
+//     legendContainer: {
+//       flexDirection: 'row',
+//       justifyContent: 'center',
+//       marginBottom: 20,
+//       flexWrap: 'wrap',
+//     },
+//     legendItem: {
+//       flexDirection: 'row',
+//       alignItems: 'center',
+//       marginHorizontal: 10,
+//       marginVertical: 5,
+//     },
+//     legendDot: {
+//       width: 12,
+//       height: 12,
+//       borderRadius: 6,
+//       marginRight: 5,
+//     },
+//     legendText: {
+//       color: '#333',
+//       fontSize: 12,
+//     },
+//       // ... your existing styles ...
+
+//   phaseDescriptionContainer: {
+//     backgroundColor: '#F3F0FF',
+//     borderRadius: 12,
+//     padding: 16,
+//     marginTop: 15,
+//     marginBottom: 15,
+//   },
+//   phaseDescriptionTitle: {
+//     fontSize: 18,
+//     fontWeight: 'bold',
+//     marginBottom: 8,
+//     color: '#333',
+//   },
+//   phaseDescriptionText: {
+//     fontSize: 16,
+//     lineHeight: 22,
+//     marginBottom: 8,
+//   },
+//   phaseTips: {
+//     fontSize: 14,
+//     fontStyle: 'italic',
+//     color: '#555',
+//     marginTop: 8,
+//     paddingTop: 8,
+//     borderTopWidth: 1,
+//     borderTopColor: '#eee',
+//   },
+//   phaseIcon: {
+//     fontSize: 24,
+//     marginRight: 8,
+//   },
+//   phaseHeader: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     marginBottom: 8,
+//   },
+//   menstruationPhase: {
+//     color: '#FF6B6B',
+//   },
+//   ovulationPhase: {
+//     color: '#4A90E2',
+//   },
+//   fertilePhase: {
+//     color: '#7ED321',
+//   },
+//   follicularPhase: {
+//     color: '#9B59B6',
+//   },
+//   lutealPhase: {
+//     color: '#F39C12',
+//   },
+//   });
+
+// export default AppCurrentCycle;
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -1492,6 +2295,7 @@ interface UserCycleData {
   isProfileComplete?: boolean;
   createdAt?: Timestamp | Date;
   lastUpdated?: Timestamp | Date;
+  lastStreakDate?: Timestamp | Date; // Added for tracking daily streak
 }
 interface PhaseInfo {
   description: string;
@@ -1516,6 +2320,8 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
   const [error, setError] = useState<string | null>(null);
   const [trackedDays, setTrackedDays] = useState<number[]>([]);
   const [cycleDocId, setCycleDocId] = useState<string | null>(null);
+  const [canUpdateStreak, setCanUpdateStreak] = useState(true);
+  const [currentDate, setCurrentDate] = useState<string>(''); // State for current date display
   const router = useRouter();
   
   // Use useRef for the animated value
@@ -1546,6 +2352,27 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
       pulseAnimation.stop();
     };
   }, [pulseAnim]);
+  
+  // Format current date with suffix
+  useEffect(() => {
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.toLocaleString('default', { month: 'long' });
+    
+    // Function to add suffix to day number
+    const getDaySuffix = (day: number) => {
+      if (day > 3 && day < 21) return 'th';
+      switch (day % 10) {
+        case 1: return 'st';
+        case 2: return 'nd';
+        case 3: return 'rd';
+        default: return 'th';
+      }
+    };
+    
+    const formattedDate = `${day}${getDaySuffix(day)} ${month}`;
+    setCurrentDate(formattedDate);
+  }, []);
     
   // Calculate next period date based on the most recent period and cycle length
   const calculateNextPeriodDate = (userData: UserCycleData): Date => {
@@ -1639,6 +2466,25 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     return streak;
   };
 
+  // Check if user can update streak today
+  const checkStreakAvailability = (userData: UserCycleData) => {
+    if (!userData.lastStreakDate) {
+      setCanUpdateStreak(true);
+      return;
+    }
+    
+    const lastStreakDate = userData.lastStreakDate instanceof Timestamp 
+      ? userData.lastStreakDate.toDate() 
+      : new Date(userData.lastStreakDate);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to midnight
+    lastStreakDate.setHours(0, 0, 0, 0); // Normalize to midnight
+    
+    // Can only update streak if last update was not today
+    setCanUpdateStreak(today.getTime() !== lastStreakDate.getTime());
+  };
+
   // Fetch user data from Firestore - UPDATED to handle multiple data locations
   const fetchUserData = async () => {
     if (!userId) {
@@ -1673,6 +2519,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
         setCycleDocId(cycleDoc.id); // Store document ID for updates
         
         processUserData(data, cycleDoc.id);
+        checkStreakAvailability(data);
         return;
       }
       
@@ -1695,6 +2542,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
         
         setCycleDocId(newCycleRef.id);
         processUserData(userData, newCycleRef.id);
+        checkStreakAvailability(userData);
         return;
       }
       
@@ -1795,6 +2643,65 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     }
   };
 
+// Check if streak can be updated (once per day)
+useEffect(() => {
+  const checkStreakUpdateAvailability = async () => {
+    if (!userId || !cycleDocId) return;
+    
+    const db = getFirestore();
+    const cycleRef = doc(db, "cycles", cycleDocId);
+    const docSnap = await getDoc(cycleRef);
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      setStreak(data.streak || 0);
+      
+      // Check if streak was already updated today
+      const lastUpdated = data.lastStreakDate?.toDate();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      setCanUpdateStreak(!lastUpdated || lastUpdated < today);
+    }
+  };
+  
+  checkStreakUpdateAvailability();
+}, [userId, cycleDocId]);
+
+const updateStreak = async () => {
+  if (!userId || !cycleDocId || !canUpdateStreak) {
+    if (!canUpdateStreak) {
+      Alert.alert('Already Tracked', 'You\'ve already tracked your streak today. Come back tomorrow!');
+    } else {
+      Alert.alert('Error', 'User data not loaded');
+    }
+    return;
+  }
+
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const db = getFirestore();
+    // Add explicit type assertion that cycleDocId is string
+    const cycleRef = doc(db, "cycles", cycleDocId as string);
+    await updateDoc(cycleRef, {
+      streak: streak + 1,
+      lastStreakDate: Timestamp.fromDate(today),
+      lastUpdated: Timestamp.now(),
+    });
+
+    setStreak(prev => prev + 1);
+    setCanUpdateStreak(false);
+    
+    // Visual feedback
+    Alert.alert('Streak Updated!', `Your streak is now ${streak + 1} days!`);
+  } catch (error) {
+    console.error('Error updating streak:', error);
+    Alert.alert('Error', 'Failed to update streak');
+  }
+};
+
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
@@ -1834,8 +2741,10 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     return Array.from({ length: cycleLength }).map((_, day) => {
       const dayNum = day + 1;
       const angle = (day / cycleLength) * 2 * Math.PI - Math.PI / 2;
-      const x = circleRadius * 0.8 * Math.cos(angle) + circleRadius - 10;
-      const y = circleRadius * 0.8 * Math.sin(angle) + circleRadius - 10;
+      // Adjust the radius multiplier to position markers appropriately
+      const x = circleRadius * 0.9 * Math.cos(angle) + circleRadius - 12;
+      const y = circleRadius * 0.9 * Math.sin(angle) + circleRadius - 12;
+  
 
       const isCurrentDay = dayNum === currentDay;
       const isPeriod = periodDays.includes(dayNum);
@@ -1889,7 +2798,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
   
     if (currentDay <= periodLength) {
       return {
-        description: "You are in your menstrual phase.This is when your uterine lining sheds.",
+        description: "You are in your menstrual phase. This is when your uterine lining sheds.",
         phase: 'menstruation' as const,  // Use 'as const' to lock the type
         icon: '🩸',
         tips: "Rest and hydrate."
@@ -1928,80 +2837,118 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
   
   return (
       <SafeAreaView style={styles.safeArea}>
-        {/* New Header */}
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Your Current Cycle</Text>
           <TouchableOpacity 
             style={styles.settingsButton}
-            onPress={() => router.push("/authentication/settings")} // Or your settings route
+            onPress={() => router.push("/authentication/settings")}
           >
             <Settings size={24} color="#333" />
           </TouchableOpacity>
         </View>
   
         <ScrollView contentContainerStyle={styles.container}>
-          {/* Removed the title and phase text from here */}
+          {/* Current Date Display - Simple Text */}
+          {/* Date Display */}
+<View style={styles.dateContainer}>
+  <Text style={styles.dayOfWeekText}>
+    {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+  </Text>
+  <Text style={styles.currentDateText}>
+    {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+  </Text>
+</View>
           
-          {/* Streak display - moved below header */}
-          {streak > 0 && (
-            <View style={styles.streakContainer}>
-              <Flame color={streak > 3 ? 'orange' : 'gray'} size={24} />
-              <Text style={styles.streakHeading}>
-                {streak} day{streak !== 1 ? 's' : ''} streak
-              </Text>
-            </View>
-          )}
+          <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[
+    styles.streakButton,
+    canUpdateStreak ? styles.streakButtonActive : styles.streakButtonInactive,
+    streak > 0 && styles.streakButtonHasStreak
+  ]}
+  onPress={updateStreak}
+  disabled={!canUpdateStreak}
+>
+  <View style={styles.streakIconContainer}>
+    <Flame 
+      size={20}
+      color={
+        canUpdateStreak 
+          ? '#FF6D00'  // Active (dark orange)
+          : streak > 0 
+            ? '#FFA726' // Inactive but has streak (lighter orange)
+            : '#9E9E9E' // No streak (gray)
+      }
+    />
+    {streak > 0 && (
+      <View style={styles.streakCountBadge}>
+        <Text style={styles.streakCountText}>{streak}</Text>
+      </View>
+    )}
+  </View>
+  <Text style={[
+    styles.streakButtonText,
+    canUpdateStreak && styles.streakButtonTextActive
+  ]}>
+    {canUpdateStreak ? 'Update Streak' : `Streak: ${streak} days`}
+  </Text>
+</TouchableOpacity>
+
+  {/* Log Period Button */}
+  <TouchableOpacity 
+    style={[styles.logPeriodButton, { flex: 1 }]}
+    onPress={logPeriod}
+  >
+    <Text style={styles.logPeriodButtonText}>Log Period</Text>
+  </TouchableOpacity>
+</View>
+          
+<View style={styles.circleContainer}>
+  {/* Cycle day and phase inside the circle */}
+  <View style={styles.cycleInfoCenter}>
+    <Text style={styles.cycleDayText}>Day {currentDay} of {cycleLength}</Text>
+    <Text style={styles.cyclePhaseText}>{currentPhase}</Text>
+    
+    {/* Log Symptoms button */}
+    <TouchableOpacity 
+      style={styles.logSymptomsButton} 
+      onPress={navigateToSymptomTracker}
+    >
+      <Text style={styles.logSymptomsText}>Log Symptoms</Text>
+    </TouchableOpacity>
+  </View>
+  {renderDayMarkers()}
+</View>
   
-          <View style={styles.circleContainer}>
-            {/* Cycle day and phase inside the circle */}
-            <View style={styles.cycleInfoCenter}>
-              <Text style={styles.cycleDayText}>Day {currentDay} of {cycleLength} </Text>
-              <Text style={styles.cyclePhaseText}>{currentPhase}</Text> 
-            </View>
-            {renderDayMarkers()}
-          </View>
-  
-          {/* Rest of your existing UI remains the same */}
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#8B5CF6' }]} />
+              <View style={[styles.legendDot, { backgroundColor: '#FF3B30' }]} />
               <Text style={styles.legendText}>Period</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#F472B6' }]} />
+              <View style={[styles.legendDot, { backgroundColor: '#B3E5FC' }]} />
               <Text style={styles.legendText}>Ovulation</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
+              <View style={[styles.legendDot, { backgroundColor: '#FFC0CB' }]} />
               <Text style={styles.legendText}>Fertile</Text>
             </View>
           </View>
 
           {/* Phase Description */}
-<View style={styles.phaseDescriptionContainer}>
-  <View style={styles.phaseHeader}>
-    <Text style={styles.phaseIcon}>{phaseInfo.icon}</Text>
-    <Text style={styles.phaseDescriptionTitle}>Today's Phase</Text>
-  </View>
-  <Text style={[
-    styles.phaseDescriptionText,
-    styles[`${phaseInfo.phase}Phase` as keyof typeof styles]
-  ]}>
-    {phaseInfo.description}
-  </Text>
-  <Text style={styles.phaseTips}>{phaseInfo.tips}</Text>
-</View>
-        
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: '#FF3B30' }]} 
-            onPress={logPeriod}>
-            <Text style={styles.buttonText}>Log Period Start</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={navigateToSymptomTracker}>
-              <Text style={styles.buttonText}>Log Your Symptoms</Text>
-            </TouchableOpacity>
+          <View style={styles.phaseDescriptionContainer}>
+            <View style={styles.phaseHeader}>
+              <Text style={styles.phaseIcon}>{phaseInfo.icon}</Text>
+              <Text style={styles.phaseDescriptionTitle}>Today's Phase</Text>
+            </View>
+            <Text style={[
+              styles.phaseDescriptionText,
+              styles[`${phaseInfo.phase}Phase` as keyof typeof styles]
+            ]}>
+              {phaseInfo.description}
+            </Text>
+            <Text style={styles.phaseTips}>{phaseInfo.tips}</Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -2019,22 +2966,134 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingVertical: 15,
-      //borderBottomWidth: 1,
       borderBottomColor: '#E5E7EB',
+      borderBottomWidth: 1,
     },
     headerTitle: {
       fontSize: 22,
       fontWeight: 'bold',
       textAlign: 'center',
-      flex: 1, // this will help center the text in the row
+      flex: 1,
     },
     settingsButton: {
       padding: 8,
       position: 'absolute',
-    right: 16,
-    top: '50%',
-    transform: [{ translateY: -12 }], // vertical alignment adjustment
+      right: 16,
+      top: '50%',
+      transform: [{ translateY: -12 }],
     },
+    // Date display styles
+    dateContainer: {
+      marginBottom: 16,
+      alignItems: 'center',
+      paddingVertical: 12,
+      // Removed background and border to match your reference image
+      // backgroundColor: '#F7F9FC',
+      // borderWidth: 1,
+      // borderColor: '#E5E7EB',
+    },
+    dayOfWeekText: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: '#6B7280', // Slightly muted color for day of week
+      textTransform: 'uppercase', // Makes day name all caps
+      letterSpacing: 0.5, // Small spacing between letters
+    },
+    currentDateText: {
+      fontSize: 32, // Much larger font size for the date
+      fontWeight: '600',
+      color: '#111827', // Darker color for better contrast
+      marginTop: 4, // Space between day and date
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 20,
+    },
+    streakButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+    },
+    streakButtonInactive: {
+      backgroundColor: '#EEEEEE',
+      borderColor: '#E0E0E0',
+    },
+    streakButtonActive: {
+      backgroundColor: '#FFF3E0',
+      borderColor: '#FFB74D',
+    },
+    streakButtonHasStreak: {
+      backgroundColor: '#FFF3E0', // Light orange background when has streak
+    },
+    streakIconContainer: {
+      position: 'relative',
+      marginRight: 8,
+    },
+    streakCountBadge: {
+      position: 'absolute',
+      right: -6,
+      top: -6,
+      backgroundColor: '#FF6D00',
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    streakCountText: {
+      color: 'white',
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    streakButtonText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: '#757575',
+    },
+    streakButtonTextActive: {
+      color: '#FF6D00',
+      fontWeight: '600',
+    },
+    logPeriodButton: {
+      backgroundColor: '#FFEBEE',
+      padding: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: '#FFCDD2',
+    },
+    logPeriodButtonText: {
+      color: '#E53935',
+      fontWeight: '500',
+      fontSize: 14,
+    },
+    streakHeading: {
+      color: '#333',
+      fontWeight: 'bold',
+      fontSize: 16,
+      marginLeft: 8,
+    },
+    logSymptomsButton: {
+      backgroundColor: '#E8F5E9',
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 20,
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: '#C8E6C9',
+    },
+    logSymptomsText: {
+      color: '#2E7D32',
+      fontWeight: 'bold',
+      fontSize: 14,
+    },
+    // Existing styles with some adjustments
     cycleInfoCenter: {
       position: 'absolute',
       zIndex: 2,
@@ -2051,8 +3110,8 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
       color: '#4B0082',
       textAlign: 'center',
       maxWidth: circleSize * 0.6,
+      marginBottom: 8,
     },
-    // ... keep all your existing styles below ...
     container: {
       flexGrow: 1,
       padding: 20,
@@ -2085,176 +3144,163 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     },
     infoCard: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.1)',
-      borderRadius: 10,
-      padding: 12,
-      margin: 5,
+      backgroundColor: '#F9F9F9',
+      padding: 15,
+      borderRadius: 12,
+      marginHorizontal: 5,
       alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
     },
     infoLabel: {
-      color: '#666',
       fontSize: 14,
-      marginBottom: 4,
+      color: '#666',
+      marginBottom: 5,
     },
     infoValue: {
-      color: '#333',
       fontSize: 16,
       fontWeight: 'bold',
-    },
-    streakContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 10,
-      backgroundColor: 'rgba(0, 0, 0, 0.1)',
-      borderRadius: 10,
-      marginBottom: 15,
-    },
-    streakHeading: {
       color: '#333',
-      fontWeight: 'bold',
-      fontSize: 16,
-      marginLeft: 8,
     },
     circleContainer: {
       width: circleSize,
       height: circleSize,
-      borderRadius: circleSize / 2,
       alignSelf: 'center',
-      position: 'relative',
-      marginBottom: 20,
+      marginVertical: 20,
       justifyContent: 'center',
       alignItems: 'center',
+      position: 'relative',
     },
     dayMarker: {
       width: 20,
       height: 20,
       borderRadius: 10,
       position: 'absolute',
-      alignItems: 'center',
       justifyContent: 'center',
+      alignItems: 'center',
     },
     currentDayRing: {
-      width: 30,
-      height: 30,
-      borderRadius: 15,
-      borderWidth: 2,
-      borderColor: '#333',
-      alignItems: 'center',
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: '#6C63FF', // Added solid background
       justifyContent: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      alignItems: 'center',
+      shadowColor: '#6C63FF',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 5,
     },
     currentDayText: {
-      color: '#333',
-      fontWeight: 'bold',
+      color: '#FFFFFF',
       fontSize: 12,
-    },
-    buttonContainer: {
-      marginTop: 20,
-      gap: 10,
+      fontWeight: 'bold',
     },
     button: {
-      backgroundColor: '#FF6B6B',
+      backgroundColor: '#6C63FF',
       padding: 15,
-      borderRadius: 10,
+      borderRadius: 8,
+      marginTop: 20,
+      width: '100%',
       alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'row',
     },
     buttonText: {
-      color: '#fff',
-      fontWeight: 'bold',
+      color: '#FFFFFF',
       fontSize: 16,
+      fontWeight: 'bold',
     },
     loadingText: {
-      color: '#333',
-      marginTop: 10,
+      marginTop: 20,
+      fontSize: 16,
+      color: '#666',
     },
     errorText: {
-      color: '#FF6B6B',
+      color: '#E53935',
       textAlign: 'center',
-      marginBottom: 20,
+      marginBottom: 10,
+      fontSize: 16,
     },
     noCycleText: {
-      color: '#333',
       fontSize: 18,
+      fontWeight: 'bold',
+      color: '#333',
       marginBottom: 10,
     },
     legendContainer: {
       flexDirection: 'row',
-      justifyContent: 'center',
+      justifyContent: 'space-around',
+      marginTop: 10,
       marginBottom: 20,
-      flexWrap: 'wrap',
+      paddingHorizontal: 10,
     },
     legendItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginHorizontal: 10,
-      marginVertical: 5,
     },
     legendDot: {
       width: 12,
       height: 12,
       borderRadius: 6,
-      marginRight: 5,
+      marginRight: 6,
     },
     legendText: {
-      color: '#333',
-      fontSize: 12,
+      fontSize: 14,
+      color: '#4B5563',
     },
-      // ... your existing styles ...
-
-  phaseDescriptionContainer: {
-    backgroundColor: '#F3F0FF',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 15,
-    marginBottom: 15,
-  },
-  phaseDescriptionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  phaseDescriptionText: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  phaseTips: {
-    fontSize: 14,
-    fontStyle: 'italic',
-    color: '#555',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  phaseIcon: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  phaseHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  menstruationPhase: {
-    color: '#FF6B6B',
-  },
-  ovulationPhase: {
-    color: '#4A90E2',
-  },
-  fertilePhase: {
-    color: '#7ED321',
-  },
-  follicularPhase: {
-    color: '#9B59B6',
-  },
-  lutealPhase: {
-    color: '#F39C12',
-  },
-  });
-
+    // Phase description container styles
+    phaseDescriptionContainer: {
+      backgroundColor: '#F9FAFB',
+      borderRadius: 12,
+      padding: 16,
+      marginTop: 10,
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+    },
+    phaseHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    phaseIcon: {
+      fontSize: 22,
+      marginRight: 8,
+    },
+    phaseDescriptionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#374151',
+    },
+    phaseDescriptionText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: '#4B5563',
+      marginBottom: 8,
+    },
+    phaseTips: {
+      fontSize: 14,
+      fontStyle: 'italic',
+      color: '#6B7280',
+      marginTop: 8,
+    },
+    // Phase-specific styles
+    menstruationPhase: {
+      color: '#FF3B30',
+    },
+    ovulationPhase: {
+      color: '#4A90E2',
+    },
+    fertilePhase: {
+      color: '#7ED321',
+    },
+    follicularPhase: {
+      color: '#9C27B0',
+    },
+    lutealPhase: {
+      color: '#FF9800',
+    },
+});
 export default AppCurrentCycle;

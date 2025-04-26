@@ -9,7 +9,7 @@ export default function CycleLayout() {
       />
       <Stack.Screen name="AppCurrentCycle" />
       <Stack.Screen name="SymtompTrackerScreen" options={{ headerShown: false }}/>
-      <Stack.Screen name="userperiod" />
+      <Stack.Screen name="userperiod" options={{ headerShown: false }} />
     </Stack>
   );
 }
