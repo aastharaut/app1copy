@@ -2321,7 +2321,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
   const [trackedDays, setTrackedDays] = useState<number[]>([]);
   const [cycleDocId, setCycleDocId] = useState<string | null>(null);
   const [canUpdateStreak, setCanUpdateStreak] = useState(true);
-  const [currentDate, setCurrentDate] = useState<string>(''); // State for current date display
+  //const [, setCurrentDate] = useState<string>(''); // State for current date display
   const router = useRouter();
   
   // Use useRef for the animated value
@@ -2352,30 +2352,10 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
       pulseAnimation.stop();
     };
   }, [pulseAnim]);
-  
-  // Format current date with suffix
-  useEffect(() => {
-    const today = new Date();
-    const day = today.getDate();
-    const month = today.toLocaleString('default', { month: 'long' });
-    
-    // Function to add suffix to day number
-    const getDaySuffix = (day: number) => {
-      if (day > 3 && day < 21) return 'th';
-      switch (day % 10) {
-        case 1: return 'st';
-        case 2: return 'nd';
-        case 3: return 'rd';
-        default: return 'th';
-      }
-    };
-    
-    const formattedDate = `${day}${getDaySuffix(day)} ${month}`;
-    setCurrentDate(formattedDate);
-  }, []);
+
     
   // Calculate next period date based on the most recent period and cycle length
-  const calculateNextPeriodDate = (userData: UserCycleData): Date => {
+    const calculateNextPeriodDate = (userData: UserCycleData): Date => {
     // Determine most recent period date
     let lastPeriod1: Date;
     let lastPeriod2: Date;
@@ -2644,15 +2624,15 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
   };
 
 // Check if streak can be updated (once per day)
-useEffect(() => {
-  const checkStreakUpdateAvailability = async () => {
-    if (!userId || !cycleDocId) return;
+    useEffect(() => {
+      const checkStreakUpdateAvailability = async () => {
+      if (!userId || !cycleDocId) return;
     
-    const db = getFirestore();
-    const cycleRef = doc(db, "cycles", cycleDocId);
-    const docSnap = await getDoc(cycleRef);
+      const db = getFirestore();
+      const cycleRef = doc(db, "cycles", cycleDocId);
+      const docSnap = await getDoc(cycleRef);
     
-    if (docSnap.exists()) {
+      if (docSnap.exists()) {
       const data = docSnap.data();
       setStreak(data.streak || 0);
       
@@ -2761,11 +2741,11 @@ const updateStreak = async () => {
               left: x,
               top: y,
               backgroundColor: isPeriod
-                ? '#FF6B6B' // Purple for period
+                ? '#FF3B30' // Purple for period
                 : isOvulation
-                ? '#4A90E2' // Pink for ovulation
+                ? '#B3E5FC' // Pink for ovulation
                 : isFertile
-                ? '#7ED321' // Light purple for fertile
+                ? '#FFC0CB' // Light purple for fertile
                 : '#CBD5E1', // Gray for other days
               zIndex: isCurrentDay ? 1 : 0,
               // Add a border for tracked days
@@ -2784,11 +2764,11 @@ const updateStreak = async () => {
     });
   };
 
-  // Format dates for display
-  const formatDate = (date: Date | null) => {
-    if (!date) return "N/A";
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  // // Format dates for display
+  // const formatDate = (date: Date | null) => {
+  //   if (!date) return "N/A";
+  //   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // };
 
   
   const phaseInfo: PhaseInfo = ((): PhaseInfo => {  // Explicit return type
@@ -2844,7 +2824,7 @@ const updateStreak = async () => {
             style={styles.settingsButton}
             onPress={() => router.push("/authentication/settings")}
           >
-            <Settings size={24} color="#333" />
+            <Settings size={24} color="#4B0082" />
           </TouchableOpacity>
         </View>
   
@@ -2967,13 +2947,13 @@ const updateStreak = async () => {
       paddingHorizontal: 20,
       paddingVertical: 15,
       borderBottomColor: '#E5E7EB',
-      borderBottomWidth: 1,
     },
     headerTitle: {
       fontSize: 22,
       fontWeight: 'bold',
       textAlign: 'center',
       flex: 1,
+      color: '#4B0082',
     },
     settingsButton: {
       padding: 8,
@@ -2982,15 +2962,11 @@ const updateStreak = async () => {
       top: '50%',
       transform: [{ translateY: -12 }],
     },
-    // Date display styles
     dateContainer: {
       marginBottom: 16,
       alignItems: 'center',
       paddingVertical: 12,
-      // Removed background and border to match your reference image
-      // backgroundColor: '#F7F9FC',
-      // borderWidth: 1,
-      // borderColor: '#E5E7EB',
+  
     },
     dayOfWeekText: {
       fontSize: 16,
@@ -3002,7 +2978,7 @@ const updateStreak = async () => {
     currentDateText: {
       fontSize: 32, // Much larger font size for the date
       fontWeight: '600',
-      color: '#111827', // Darker color for better contrast
+      color: '#4B0082', // Darker color for better contrast
       marginTop: 4, // Space between day and date
     },
     buttonRow: {
@@ -3073,12 +3049,12 @@ const updateStreak = async () => {
       fontWeight: '500',
       fontSize: 14,
     },
-    streakHeading: {
-      color: '#333',
-      fontWeight: 'bold',
-      fontSize: 16,
-      marginLeft: 8,
-    },
+    // streakHeading: {
+    //   color: '#333',
+    //   fontWeight: 'bold',
+    //   fontSize: 16,
+    //   marginLeft: 8,
+    // },
     logSymptomsButton: {
       backgroundColor: '#E8F5E9',
       paddingVertical: 10,
@@ -3093,7 +3069,6 @@ const updateStreak = async () => {
       fontWeight: 'bold',
       fontSize: 14,
     },
-    // Existing styles with some adjustments
     cycleInfoCenter: {
       position: 'absolute',
       zIndex: 2,
@@ -3122,48 +3097,7 @@ const updateStreak = async () => {
       justifyContent: 'center',
       alignItems: 'center',
       padding: 20,
-      backgroundColor: '#FFFBEB',
-    },
-    title: {
-      fontSize: 22,
-      fontWeight: 'bold',
-      color: '#333',
-      textAlign: 'center',
-      marginBottom: 5,
-    },
-    phaseText: {
-      fontSize: 18,
-      color: '#FF6B6B',
-      textAlign: 'center',
-      marginBottom: 10,
-    },
-    cycleInfoCards: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 20,
-    },
-    infoCard: {
-      flex: 1,
-      backgroundColor: '#F9F9F9',
-      padding: 15,
-      borderRadius: 12,
-      marginHorizontal: 5,
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 2,
-    },
-    infoLabel: {
-      fontSize: 14,
-      color: '#666',
-      marginBottom: 5,
-    },
-    infoValue: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#333',
+      backgroundColor: '#F3F0FF',
     },
     circleContainer: {
       width: circleSize,
@@ -3186,7 +3120,7 @@ const updateStreak = async () => {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: '#6C63FF', // Added solid background
+      backgroundColor: '#4B0082', // Added solid background
       justifyContent: 'center',
       alignItems: 'center',
       shadowColor: '#6C63FF',
@@ -3253,7 +3187,7 @@ const updateStreak = async () => {
     },
     // Phase description container styles
     phaseDescriptionContainer: {
-      backgroundColor: '#F9FAFB',
+      backgroundColor: '#F3F0FF',
       borderRadius: 12,
       padding: 16,
       marginTop: 10,

@@ -410,8 +410,8 @@ type SavedSymptom = {
             name: 'Pain',
             selected: null,
             options: [
-              { image: require('../../../assets/symptoms/pain_1.png'), label: 'Back' },
-              { image: require('../../../assets/symptoms/pain_3.png'), label: 'Lower Belly' },
+              { image: require('../../../assets/symptoms/pain_1.png'), label: 'Cramps' },
+              { image: require('../../../assets/symptoms/pain_3.png'), label: 'Back' },
               { image: require('../../../assets/symptoms/breast.png'), label: 'Breast' },
               { image: require('../../../assets/symptoms/pain_in_joints.png'), label: 'Joints' }
             ]
@@ -442,7 +442,7 @@ type SavedSymptom = {
             options: [
               { image: require('../../../assets/symptoms/skin_1.png'), label: 'Great' },
               { image: require('../../../assets/symptoms/skin_2.png'), label: 'Acne' },
-              { image: require('../../../assets/symptoms/skin_3.png'), label: 'Oily and Congested' },
+              { image: require('../../../assets/symptoms/skin_3.png'), label: 'Congested' },
               { image: require('../../../assets/symptoms/skin.png'), label: 'Rough and Dry' }
             ]
           },
@@ -453,7 +453,7 @@ type SavedSymptom = {
               { image: require('../../../assets/symptoms/dumbbell.png'), label: 'Weights' },
               { image: require('../../../assets/symptoms/treadmill.png'), label: 'Cardio' },
               { image: require('../../../assets/symptoms/yoga_mat.png'), label: 'Mat-exercises' },
-              { image: require('../../../assets/symptoms/rings.png'), label: 'Gymnastics' }
+              { image: require('../../../assets/symptoms/rings.png'), label: 'Stretching' }
             ]
           }
       ];
@@ -636,7 +636,7 @@ const handleSymptomSelect = (categoryIndex: number, optionIndex: number): void =
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8A2BE2" />
+        <ActivityIndicator size="large" color="#4B0082" />
         <Text style={styles.loadingText}>Loading symptom data...</Text>
       </SafeAreaView>
     );
@@ -708,7 +708,7 @@ const handleSymptomSelect = (categoryIndex: number, optionIndex: number): void =
       <View style={styles.footer}>
         {saveSuccess && (
           <View style={styles.saveSuccessContainer}>
-            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+            <Ionicons name="checkmark-circle" size={20} color="#4B0082" />
             <Text style={styles.saveSuccessText}>Symptoms saved successfully!</Text>
           </View>
         )}
@@ -732,7 +732,7 @@ const handleSymptomSelect = (categoryIndex: number, optionIndex: number): void =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F0FF',
+    backgroundColor: '#FFF',
   },
   loadingContainer: {
     flex: 1,
@@ -743,7 +743,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#6C63FF',
+    color: '#4B0082',
     fontWeight: '500',
   },
   header: {
@@ -772,10 +772,10 @@ const styles = StyleSheet.create({
   dayNumber: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
+    color: '#4B0082',
   },
   selectedDay: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#4B0082',
     borderRadius: 21,
     width: 42,
     height: 42,
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
   },
   symptomsContainer: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F3F0FF',
   },
   symptomsContent: {
     paddingVertical: 16,
@@ -831,7 +831,7 @@ const styles = StyleSheet.create({
   selectedSymptom: {
     backgroundColor: '#F0EFFF',
     borderWidth: 1,
-    borderColor: '#6C63FF',
+    borderColor: '#4B0082',
   },
   symptomIcon: {
     width: 32,
@@ -851,14 +851,18 @@ const styles = StyleSheet.create({
     borderTopColor: '#EDEDED',
   },
   saveButton: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
+    backgroundColor: '#4B0082',
+    //borderRadius: 12,
+    //paddingVertical: 16,
+    //alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 25,
+    paddingVertical: 12,
+    alignItems: 'center',
+    
   },
   savingButton: {
-    backgroundColor: '#7D76E5',
+    backgroundColor: '#4B0082',
   },
   saveButtonText: {
     color: 'white',
