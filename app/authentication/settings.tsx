@@ -259,16 +259,6 @@ const Profile = () => {
           <Text style={styles.sectionTitle}>Preferences</Text>
 
           <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Dark Mode</Text>
-            <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
-              thumbColor={darkMode ? "#4B0082" : "#f4f3f4"}
-              trackColor={{ false: "#F3F0FF", true: "#E5D4FF" }}
-            />
-          </View>
-
-          <View style={styles.settingItem}>
             <Text style={styles.settingLabel}>Notifications</Text>
             <Switch
               value={notificationsEnabled}

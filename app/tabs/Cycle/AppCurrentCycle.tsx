@@ -2275,10 +2275,14 @@ import {
 } from 'react-native';
 import { Flame, Settings } from 'lucide-react-native';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotifications, schedulePhaseNotification, schedulePhaseTransitionNotification } from '../../../api/notifications';
 interface CycleTrackerProps {
   userId: string;
 }
 import { useRouter } from 'expo-router';
+import { getPrediction } from '@/api/api';
+import { SchedulableTriggerInputTypes } from 'expo-notifications';
 
 interface UserCycleData {
   userId: string;
@@ -2296,6 +2300,9 @@ interface UserCycleData {
   createdAt?: Timestamp | Date;
   lastUpdated?: Timestamp | Date;
   lastStreakDate?: Timestamp | Date; // Added for tracking daily streak
+  mlPredictedCycleLength?: number;  // Add this new field
+  mlPredictionConfidence?: number;  // Optional: confidence score
+  lastMlUpdate?: Timestamp | Date;  // To track when ML was last used
 }
 interface PhaseInfo {
   description: string;
@@ -2322,6 +2329,7 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
   const [cycleDocId, setCycleDocId] = useState<string | null>(null);
   const [canUpdateStreak, setCanUpdateStreak] = useState(true);
   //const [, setCurrentDate] = useState<string>(''); // State for current date display
+
   const router = useRouter();
   
   // Use useRef for the animated value
@@ -2446,6 +2454,150 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     return streak;
   };
 
+  // Add this to your AppCurrentCycle.tsx
+
+const calculateEnhancedCycleInfo = async (userData: UserCycleData): Promise<{
+  enhancedCycleLength: number;
+  nextPeriodDate: Date;
+  ovulationDate: Date;
+  usingMl: boolean;
+}> => {
+  // Start with traditional calculation
+  const traditionalNextPeriod = calculateNextPeriodDate(userData);
+  
+  // Calculate parameters for ML input
+  const ovulationDay = userData.cycleLength - 14; // Typical ovulation timing
+  const mensesLength = userData.periodLength;
+  
+  let enhancedCycleLength = userData.cycleLength;
+  let usingMl = false;
+  
+  try {
+    // Get ML prediction
+    const mlResult = await getPrediction({
+      ovulation_day: ovulationDay,
+      menses_length: mensesLength
+    });
+    
+    if (mlResult.status === 'success') {
+      // Only use ML prediction if it seems reasonable (between 21-40 days)
+      if (mlResult.prediction >= 21 && mlResult.prediction <= 40) {
+        enhancedCycleLength = Math.round(mlResult.prediction);
+        usingMl = true;
+      }
+    }
+  } catch (error) {
+    console.error('Error getting ML prediction:', error);
+    // Fall back to traditional calculation
+  }
+  
+  // Calculate next period based on enhanced cycle length
+  const enhancedNextPeriod = new Date(userData.lastPeriodDate1 instanceof Timestamp 
+    ? userData.lastPeriodDate1.toDate() 
+    : new Date(userData.lastPeriodDate1));
+  
+  enhancedNextPeriod.setDate(enhancedNextPeriod.getDate() + enhancedCycleLength);
+  
+  // Calculate ovulation (typically 14 days before next period)
+  const enhancedOvulation = new Date(enhancedNextPeriod);
+  enhancedOvulation.setDate(enhancedOvulation.getDate() - 14);
+  
+  return {
+    enhancedCycleLength,
+    nextPeriodDate: enhancedNextPeriod,
+    ovulationDate: enhancedOvulation,
+    usingMl
+  };
+};
+
+// 4. Add state variables for ML-enhanced features
+// Add these to your component's state
+
+const [usingMlPrediction, setUsingMlPrediction] = useState(false);
+const [mlConfidence, setMlConfidence] = useState<number | null>(null);
+
+// 5. Update the processUserData function to incorporate ML predictions
+// Modify your existing processUserData function
+
+const processUserData = async (data: UserCycleData, docId: string) => {
+  // Set basic cycle properties
+  setCycleLength(data.cycleLength || 28);
+  setPeriodLength(data.periodLength || 5);
+  setTrackedDays(data.trackedDays || []);
+  
+  // Get streak from data or calculate it
+  setStreak(data.streak || calculateStreak(data.trackedDays || []));
+  
+  // First calculate traditional predictions
+  const traditionalNextPeriod = calculateNextPeriodDate(data);
+  const traditionalOvulation = calculateOvulationDate(traditionalNextPeriod);
+  
+  // Then try to get enhanced predictions
+  try {
+    const {
+      enhancedCycleLength,
+      nextPeriodDate: enhancedNextPeriod,
+      ovulationDate: enhancedOvulation,
+      usingMl
+    } = await calculateEnhancedCycleInfo(data);
+    
+    // Update state with either traditional or enhanced values
+    setNextPeriod(usingMl ? enhancedNextPeriod : traditionalNextPeriod);
+    setOvulationDate(usingMl ? enhancedOvulation : traditionalOvulation);
+    setUsingMlPrediction(usingMl);
+    
+    // Calculate current day and phase based on actual cycle length
+    const { currentCycleDay, currentPhase } = calculateCurrentCycleInfo(data);
+    setCurrentDay(currentCycleDay);
+    setCurrentPhase(currentPhase);
+    
+    const db = getFirestore();
+    
+    // Update the document with calculated values
+    if (docId) {
+      const cycleRef = doc(db, "cycles", docId);
+      await updateDoc(cycleRef, {
+        predictedNextPeriodDate: usingMl ? enhancedNextPeriod : traditionalNextPeriod,
+        predictedOvulationDate: usingMl ? enhancedOvulation : traditionalOvulation,
+        currentCycleDay,
+        currentPhase,
+        lastUpdated: new Date(),
+        mlPredictedCycleLength: usingMl ? enhancedCycleLength : null,
+        lastMlUpdate: usingMl ? new Date() : null
+      });
+    }
+  } catch (error) {
+    console.error("Error with ML prediction:", error);
+    // Fall back to traditional calculation
+    setNextPeriod(traditionalNextPeriod);
+    setOvulationDate(traditionalOvulation);
+    setUsingMlPrediction(false);
+    
+    // Calculate current day and phase
+    const { currentCycleDay, currentPhase } = calculateCurrentCycleInfo(data);
+    setCurrentDay(currentCycleDay);
+    setCurrentPhase(currentPhase);
+    
+    const db = getFirestore();
+    // Update the document with traditional calculated values
+    try {
+      if (docId) {
+        const cycleRef = doc(db, "cycles", docId);
+        await updateDoc(cycleRef, {
+          predictedNextPeriodDate: traditionalNextPeriod,
+          predictedOvulationDate: traditionalOvulation,
+          currentCycleDay,
+          currentPhase,
+          lastUpdated: new Date()
+        });
+      }
+    } catch (updateError) {
+      console.error("Error updating calculated values:", updateError);
+    }
+  }
+};
+
+
   // Check if user can update streak today
   const checkStreakAvailability = (userData: UserCycleData) => {
     if (!userData.lastStreakDate) {
@@ -2538,51 +2690,51 @@ const AppCurrentCycle = ({ userId }: CycleTrackerProps) => {
     }
   };
   
-  // Helper function to process user data after fetching
-  const processUserData = async (data: UserCycleData, docId: string) => {
-    // Set cycle properties
-    setCycleLength(data.cycleLength || 28);
-    setPeriodLength(data.periodLength || 5);
-    setTrackedDays(data.trackedDays || []);
+  // // Helper function to process user data after fetching
+  // const processUserData = async (data: UserCycleData, docId: string) => {
+  //   // Set cycle properties
+  //   setCycleLength(data.cycleLength || 28);
+  //   setPeriodLength(data.periodLength || 5);
+  //   setTrackedDays(data.trackedDays || []);
     
-    // Get streak from data or calculate it
-    setStreak(data.streak || calculateStreak(data.trackedDays || []));
+  //   // Get streak from data or calculate it
+  //   setStreak(data.streak || calculateStreak(data.trackedDays || []));
     
-    // Calculate predictions
-    const nextPeriodDate = calculateNextPeriodDate(data);
-    const ovulationDate = calculateOvulationDate(nextPeriodDate);
-    setNextPeriod(nextPeriodDate);
-    setOvulationDate(ovulationDate);
+  //   // Calculate predictions
+  //   const nextPeriodDate = calculateNextPeriodDate(data);
+  //   const ovulationDate = calculateOvulationDate(nextPeriodDate);
+  //   setNextPeriod(nextPeriodDate);
+  //   setOvulationDate(ovulationDate);
     
-    // Calculate current day and phase
-    const { currentCycleDay, currentPhase } = calculateCurrentCycleInfo(data);
-    setCurrentDay(currentCycleDay);
-    setCurrentPhase(currentPhase);
+  //   // Calculate current day and phase
+  //   const { currentCycleDay, currentPhase } = calculateCurrentCycleInfo(data);
+  //   setCurrentDay(currentCycleDay);
+  //   setCurrentPhase(currentPhase);
     
-    const db = getFirestore();
+  //   const db = getFirestore();
     
-    // Update the document with calculated values
-    try {
-      if (docId) {
-        const cycleRef = doc(db, "cycles", docId);
-        await updateDoc(cycleRef, {
-          predictedNextPeriodDate: nextPeriodDate,
-          predictedOvulationDate: ovulationDate,
-          currentCycleDay,
-          currentPhase,
-          lastUpdated: new Date()
-        });
-      }
-    } catch (error) {
-      console.error("Error updating calculated values:", error);
-      // Non-blocking error - don't show to user
-    }
-  };
+  //   // Update the document with calculated values
+  //   try {
+  //     if (docId) {
+  //       const cycleRef = doc(db, "cycles", docId);
+  //       await updateDoc(cycleRef, {
+  //         predictedNextPeriodDate: nextPeriodDate,
+  //         predictedOvulationDate: ovulationDate,
+  //         currentCycleDay,
+  //         currentPhase,
+  //         lastUpdated: new Date()
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating calculated values:", error);
+  //     // Non-blocking error - don't show to user
+  //   }
+  // };
 
-  // Load data on component mount
-  useEffect(() => {
-    fetchUserData();
-  }, [userId]);
+  // // Load data on component mount
+  // useEffect(() => {
+  //   fetchUserData();
+  // }, [userId]);
 
   // Handle navigation to symptom tracker
   const navigateToSymptomTracker = () => {
@@ -2764,11 +2916,124 @@ const updateStreak = async () => {
     });
   };
 
-  // // Format dates for display
-  // const formatDate = (date: Date | null) => {
-  //   if (!date) return "N/A";
-  //   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  // };
+
+  // Add notification state and refs
+const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+const lastNotifiedDay = useRef(0);
+const lastNotifiedPhase = useRef('');
+
+// Add setup for notifications in useEffect
+useEffect(() => {
+  const setupNotifications = async () => {
+    try {
+      const token = await registerForPushNotifications();
+      setNotificationsEnabled(!!token);
+    } catch (error) {
+      console.error('Error setting up notifications:', error);
+    }
+  };
+  
+  setupNotifications();
+}, []);
+
+// Add notification scheduling based on cycle day and phase
+useEffect(() => {
+  // Only proceed if we have all required data and notifications are enabled
+  if (!userId || !currentPhase || !notificationsEnabled || !userData) return;
+  
+  const scheduleNotifications = async () => {
+    try {
+      // 1. Phase-specific daily notifications
+      // Only send one notification per day per phase to avoid spamming
+      if (currentDay !== lastNotifiedDay.current || currentPhase !== lastNotifiedPhase.current) {
+        // Schedule a notification for this phase for tomorrow morning
+        const tomorrowMorning = new Date();
+        tomorrowMorning.setDate(tomorrowMorning.getDate() + 1);
+        tomorrowMorning.setHours(9, 0, 0, 0); // 9 AM
+        
+        await schedulePhaseNotification(userId, currentPhase, tomorrowMorning);
+        
+        // Update last notified tracking
+        lastNotifiedDay.current = currentDay;
+        lastNotifiedPhase.current = currentPhase;
+      }
+      
+      // 2. Phase transition notifications (notify about upcoming phase changes)
+      
+      // Determine next phase and days until transition
+      let nextPhase = "";
+      let daysUntilTransition = 0;
+      
+      if (currentPhase === "Menstrual Phase") {
+        nextPhase = "Follicular Phase";
+        daysUntilTransition = periodLength - currentDay + 1;
+      } else if (currentPhase === "Follicular Phase") {
+        nextPhase = "Ovulatory Phase";
+        const ovulationStartDay = cycleLength - 14 - 2; // Ovulation minus 2 days
+        daysUntilTransition = ovulationStartDay - currentDay;
+      } else if (currentPhase === "Ovulatory Phase") {
+        nextPhase = "Luteal Phase";
+        const ovulationEndDay = cycleLength - 14 + 2; // Ovulation plus 2 days
+        daysUntilTransition = ovulationEndDay - currentDay;
+      } else if (currentPhase === "Luteal Phase") {
+        nextPhase = "Menstrual Phase";
+        daysUntilTransition = cycleLength - currentDay + 1;
+      }
+      
+      // Schedule notification if phase change is soon (1 day before)
+      if (daysUntilTransition === 1) {
+        await schedulePhaseTransitionNotification(
+          userId,
+          currentPhase,
+          nextPhase,
+          daysUntilTransition
+        );
+      }
+            
+      // Ovulation day notification (1 day before)
+      const ovulationDay = cycleLength - 14;
+      if (currentDay === ovulationDay - 1) {
+        const tomorrowMorning = new Date();
+        tomorrowMorning.setDate(tomorrowMorning.getDate() + 1);
+        tomorrowMorning.setHours(8, 0, 0, 0); // 8 AM
+        
+        // await Notifications.scheduleNotificationAsync({
+        //   content: {
+        //     title: 'Ovulation Tomorrow',
+        //     body: "Your ovulation is expected tomorrow. This is your most fertile day if you're trying to conceive.",
+        //   },
+        //   trigger: {
+        //     type : Notifications.SchedulableTriggerInputTypes.DATE,
+            
+
+        //   },
+        // });
+      }
+      
+      // Period reminder (2 days before expected period)
+      if (currentDay === cycleLength - 2) {
+        const tomorrowEvening = new Date();
+        tomorrowEvening.setDate(tomorrowEvening.getDate() + 1);
+        tomorrowEvening.setHours(19, 0, 0, 0); // 7 PM
+        
+        // await Notifications.scheduleNotificationAsync({
+        //   content: {
+        //     title: 'Period Coming Soon',
+        //     body: 'Your period is expected to start in 2 days. Make sure you have supplies ready!',
+        //   },
+        //   trigger: {
+        //     date: Notifications.SchedulableTriggerInputTypes.DATE,
+        //   },
+        // });
+      }
+      
+    } catch (error) {
+      console.error('Error scheduling notifications:', error);
+    }
+  };
+  
+  scheduleNotifications();
+}, [userId, currentDay, currentPhase, notificationsEnabled, cycleLength, periodLength]);
 
   
   const phaseInfo: PhaseInfo = ((): PhaseInfo => {  // Explicit return type
