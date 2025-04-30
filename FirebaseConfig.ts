@@ -11,7 +11,6 @@ import { getFirestore, Timestamp } from 'firebase/firestore';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCRI4-1kYFoqiUjEYT4AOnUSG9amMS4nLE",
   authDomain: "hormoniq-8420b.firebaseapp.com",
   projectId: "hormoniq-8420b",
   storageBucket: "hormoniq-8420b.firebasestorage.app",
