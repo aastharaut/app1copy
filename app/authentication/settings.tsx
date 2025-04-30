@@ -21,13 +21,13 @@ import {
   reauthenticateWithCredential,
 } from "firebase/auth";
 
+
 const Profile = () => {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [changingPassword, setChangingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");

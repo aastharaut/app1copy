@@ -4,7 +4,6 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SchedulableTriggerInputTypes } from 'expo-notifications';
 
 // Define notification content for each cycle phase
 export const PHASE_NOTIFICATIONS = {
